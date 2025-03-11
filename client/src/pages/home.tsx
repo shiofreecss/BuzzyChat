@@ -61,7 +61,7 @@ export default function Home() {
     }
   };
 
-  const handleSelectUser = (user: UserType) => {
+  const handleSelectUser = (user: UserType | null) => {
     setSelectedUser(user);
     if (window.innerWidth <= 768) {
       setLocation('/chat');
@@ -71,6 +71,10 @@ export default function Home() {
   const handleBackToList = () => {
     setSelectedUser(undefined);
     setLocation('/');
+  };
+
+  const handleBackFromProfile = () => {
+    setShowProfile(false);
   };
 
   return (
@@ -91,21 +95,27 @@ export default function Home() {
 
         {address ? (
           showProfile ? (
-            <UserProfile address={address} />
+            <UserProfile 
+              address={address} 
+              onBack={handleBackFromProfile}
+            />
           ) : (
             <div className="flex flex-col md:flex-row gap-4">
               {(!selectedUser || window.innerWidth > 768) && (
                 <ChatList 
                   currentAddress={address} 
                   onSelectUser={handleSelectUser}
+                  onPublicChat={() => handleSelectUser(null)}
+                  selectedUser={selectedUser}
                 />
               )}
-              {(selectedUser || window.innerWidth > 768) && (
+              {(selectedUser !== undefined || window.innerWidth > 768) && (
                 <ChatInterface 
                   address={address}
                   selectedUser={selectedUser}
                   onSelectUser={handleBackToList}
                   showBackButton={!!selectedUser && window.innerWidth <= 768}
+                  isPublicChat={!selectedUser}
                 />
               )}
             </div>

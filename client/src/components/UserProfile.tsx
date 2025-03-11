@@ -7,12 +7,14 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { User, UpdateUser } from "@shared/schema";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft } from "lucide-react";
 
 interface UserProfileProps {
   address: string;
+  onBack: () => void;
 }
 
-export default function UserProfile({ address }: UserProfileProps) {
+export default function UserProfile({ address, onBack }: UserProfileProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
@@ -94,14 +96,21 @@ export default function UserProfile({ address }: UserProfileProps) {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle className="flex justify-between items-center">
-          Profile Settings
+        <div className="flex items-center justify-between">
+          <Button 
+            variant="ghost" 
+            onClick={onBack}
+            className="p-0 hover:bg-transparent"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+          <CardTitle className="flex-1 text-center">Profile Settings</CardTitle>
           {!isEditing && (
             <Button onClick={startEditing} variant="outline">
               Edit Profile
             </Button>
           )}
-        </CardTitle>
+        </div>
       </CardHeader>
       <CardContent>
         {isEditing ? (

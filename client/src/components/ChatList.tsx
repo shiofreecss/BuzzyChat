@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, MessageSquare, UserPlus, UserCheck } from "lucide-react";
+import { Search, MessageSquare, UserPlus, UserCheck, Users } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User, Friend } from "@shared/schema";
 import { shortenAddress } from "@/lib/web3";
@@ -12,10 +12,12 @@ import { apiRequest } from "@/lib/queryClient";
 
 interface ChatListProps {
   currentAddress: string;
-  onSelectUser: (user: User) => void;
+  onSelectUser: (user: User | null) => void;
+  onPublicChat: () => void;
+  selectedUser?: User | null;
 }
 
-export default function ChatList({ currentAddress, onSelectUser }: ChatListProps) {
+export default function ChatList({ currentAddress, onSelectUser, onPublicChat, selectedUser }: ChatListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"all" | "friends">("friends");
   const { toast } = useToast();
@@ -129,6 +131,15 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
         </div>
       </div>
 
+      <Button
+        variant="ghost"
+        className={`m-4 flex items-center gap-2 ${!selectedUser ? 'bg-purple-600 text-white hover:bg-purple-700' : ''}`}
+        onClick={onPublicChat}
+      >
+        <Users className="h-4 w-4" />
+        Public Chat
+      </Button>
+
       {friendRequests.length > 0 && (
         <div className="p-4 border-b border-gray-800 bg-gray-800/50">
           <h3 className="text-sm font-medium mb-2 text-gray-200">Friend Requests ({friendRequests.length})</h3>
@@ -165,7 +176,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
                   <div key={friend.id} className="flex items-center justify-between">
                     <Button
                       variant="ghost"
-                      className="flex-1 justify-start gap-2"
+                      className={`flex-1 justify-start gap-2 ${selectedUser?.id === friend.id ? 'bg-purple-600 text-white hover:bg-purple-700' : ''}`}
                       onClick={() => onSelectUser(friend)}
                     >
                       <MessageSquare className="h-4 w-4" />
@@ -190,7 +201,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
               <div key={user.id} className="flex items-center justify-between">
                 <Button
                   variant="ghost"
-                  className="flex-1 justify-start gap-2"
+                  className={`flex-1 justify-start gap-2 ${selectedUser?.id === user.id ? 'bg-purple-600 text-white hover:bg-purple-700' : ''}`}
                   onClick={() => isFriend(user.address) && onSelectUser(user)}
                   disabled={!isFriend(user.address)}
                 >
