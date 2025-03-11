@@ -1,11 +1,13 @@
 import { Card } from "@/components/ui/card";
 import { shortenAddress } from "@/lib/web3";
-import { type Message } from "@shared/schema";
+import { type Message, type Reaction } from "@shared/schema";
 import { format } from "date-fns";
 import { PlusCircle } from "lucide-react";
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Popover,
   PopoverContent,
@@ -16,35 +18,47 @@ import { Button } from "@/components/ui/button";
 interface ChatMessageProps {
   message: Message;
   isOwn: boolean;
-  onReact?: (emoji: string) => void;
 }
 
-interface Reaction {
+interface ReactionCount {
   emoji: string;
   count: number;
 }
 
-export default function ChatMessage({ message, isOwn, onReact }: ChatMessageProps) {
-  const [reactions, setReactions] = useState<Reaction[]>([]);
+export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
   const [showPicker, setShowPicker] = useState(false);
+  const queryClient = useQueryClient();
 
-  const handleEmojiSelect = (emoji: any) => {
-    setShowPicker(false);
-    if (onReact) {
-      onReact(emoji.native);
+  // Fetch reactions for this message
+  const { data: reactions = [] } = useQuery<Reaction[]>({
+    queryKey: [`/api/messages/${message.id}/reactions`],
+    enabled: !!message.id,
+  });
+
+  // Group reactions by emoji and count them
+  const reactionCounts = reactions.reduce((acc: ReactionCount[], reaction) => {
+    const existing = acc.find(r => r.emoji === reaction.emoji);
+    if (existing) {
+      existing.count++;
+      return acc;
     }
-    // For now, just add locally. In the future, this should be synced with the server
-    setReactions(prev => {
-      const existing = prev.find(r => r.emoji === emoji.native);
-      if (existing) {
-        return prev.map(r => 
-          r.emoji === emoji.native 
-            ? { ...r, count: r.count + 1 }
-            : r
-        );
-      }
-      return [...prev, { emoji: emoji.native, count: 1 }];
-    });
+    return [...acc, { emoji: reaction.emoji, count: 1 }];
+  }, []);
+
+  const handleEmojiSelect = async (emoji: any) => {
+    setShowPicker(false);
+    try {
+      await apiRequest("POST", `/api/messages/${message.id}/reactions`, {
+        emoji: emoji.native,
+        fromAddress: message.fromAddress,
+      });
+      // Invalidate reactions query to trigger refetch
+      await queryClient.invalidateQueries({ 
+        queryKey: [`/api/messages/${message.id}/reactions`] 
+      });
+    } catch (error) {
+      console.error("Failed to add reaction:", error);
+    }
   };
 
   if (!message) return null;
@@ -65,9 +79,9 @@ export default function ChatMessage({ message, isOwn, onReact }: ChatMessageProp
         </div>
 
         {/* Reactions */}
-        {reactions.length > 0 && (
+        {reactionCounts.length > 0 && (
           <div className="flex gap-1 mt-2">
-            {reactions.map((reaction, index) => (
+            {reactionCounts.map((reaction, index) => (
               <span key={index} className="bg-black/20 rounded px-1.5 py-0.5 text-sm">
                 {reaction.emoji} {reaction.count}
               </span>

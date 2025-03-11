@@ -1,7 +1,9 @@
 import { users, messages, friends, type User, type InsertUser, type Message, type InsertMessage, type UpdateUser, type Friend, type InsertFriendRequest } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, lt } from "drizzle-orm";
+import { eq, and, or, lt, not } from "drizzle-orm";
 import { subDays } from "date-fns";
+import { reactions, type Reaction, type InsertReaction } from "@shared/schema"; // Import the reaction schema
+
 
 export interface IStorage {
   getUser(address: string): Promise<User | undefined>;
@@ -19,6 +21,10 @@ export interface IStorage {
   getFriendRequests(address: string): Promise<Friend[]>;
   getFriends(address: string): Promise<User[]>;
   checkFriendship(address1: string, address2: string): Promise<boolean>;
+  // Add reaction methods
+  addReaction(reaction: InsertReaction): Promise<Reaction>;
+  getReactions(messageId: number): Promise<Reaction[]>;
+  removeReaction(reactionId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -94,7 +100,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(messages)
       .where(
         and(
-          messages.toAddress.notNull,
+          not(eq(messages.toAddress, null)),
           lt(messages.timestamp, sixtyDaysAgo)
         )
       );
@@ -195,6 +201,28 @@ export class DatabaseStorage implements IStorage {
       );
 
     return !!friendship;
+  }
+
+  async addReaction(reaction: InsertReaction): Promise<Reaction> {
+    const [newReaction] = await db
+      .insert(reactions)
+      .values(reaction)
+      .returning();
+    return newReaction;
+  }
+
+  async getReactions(messageId: number): Promise<Reaction[]> {
+    return await db
+      .select()
+      .from(reactions)
+      .where(eq(reactions.messageId, messageId))
+      .orderBy(reactions.timestamp);
+  }
+
+  async removeReaction(reactionId: number): Promise<void> {
+    await db
+      .delete(reactions)
+      .where(eq(reactions.id, reactionId));
   }
 }
 

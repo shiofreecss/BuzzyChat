@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertUserSchema, insertMessageSchema, updateUserSchema, insertFriendRequestSchema } from "@shared/schema";
+import { insertReactionSchema } from "@shared/schema"; // Assuming this schema is defined
+
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -191,6 +193,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching friends:", error);
       res.status(500).json({ error: "Failed to fetch friends" });
+    }
+  });
+
+  // Add to existing routes
+  app.post('/api/messages/:messageId/reactions', async (req, res) => {
+    try {
+      const { messageId } = req.params;
+      const reactionData = insertReactionSchema.parse({
+        ...req.body,
+        messageId: parseInt(messageId),
+      });
+      const reaction = await storage.addReaction(reactionData);
+
+      // Broadcast the reaction to all connected clients
+      const broadcastData = JSON.stringify({
+        type: 'reaction',
+        data: reaction,
+      });
+
+      clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(broadcastData);
+        }
+      });
+
+      res.json(reaction);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid reaction data" });
+    }
+  });
+
+  app.get('/api/messages/:messageId/reactions', async (req, res) => {
+    try {
+      const { messageId } = req.params;
+      const reactions = await storage.getReactions(parseInt(messageId));
+      res.json(reactions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch reactions" });
+    }
+  });
+
+  app.delete('/api/reactions/:reactionId', async (req, res) => {
+    try {
+      const { reactionId } = req.params;
+      await storage.removeReaction(parseInt(reactionId));
+      res.sendStatus(200);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to remove reaction" });
     }
   });
 

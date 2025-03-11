@@ -231,7 +231,6 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
             key={msg.id}
             message={msg}
             isOwn={msg.fromAddress === address}
-            onReact={(emoji) => handleReaction(msg.id, emoji)}
           />
         ))}
         <div ref={messagesEndRef} />
