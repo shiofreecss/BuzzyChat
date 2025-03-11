@@ -43,6 +43,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(users);
   });
 
+  // Get user by address
+  app.get('/api/users/:address', async (req, res) => {
+    try {
+      const { address } = req.params;
+      const user = await storage.getUser(address);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+
   app.post('/api/users', async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
@@ -62,10 +76,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/users/:address', async (req, res) => {
     try {
       const { address } = req.params;
+      console.log("PATCH request for address:", address);
+      console.log("Request body:", req.body);
+
       const updateData = updateUserSchema.parse(req.body);
+      console.log("Validated update data:", updateData);
+
       const updatedUser = await storage.updateUser(address, updateData);
+      console.log("Updated user:", updatedUser);
+
       res.json(updatedUser);
     } catch (error) {
+      console.error("Update user error:", error);
       res.status(400).json({ error: "Invalid update data" });
     }
   });

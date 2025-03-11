@@ -42,6 +42,11 @@ export async function connectWallet(walletType: 'metamask' | 'coinbase' = 'metam
   }
 }
 
+export async function disconnectWallet(): Promise<void> {
+  // Clear any local session data
+  localStorage.removeItem('walletAddress');
+}
+
 export function shortenAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }

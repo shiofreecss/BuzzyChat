@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import WalletConnect from "@/components/WalletConnect";
 import ChatInterface from "@/components/ChatInterface";
 import UserProfile from "@/components/UserProfile";
@@ -6,14 +6,23 @@ import ChatList from "@/components/ChatList";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { User, Settings } from "lucide-react";
+import { User, Settings, LogOut } from "lucide-react";
 import type { User as UserType } from "@shared/schema";
+import { disconnectWallet } from "@/lib/web3";
 
 export default function Home() {
   const [address, setAddress] = useState<string>();
   const [showProfile, setShowProfile] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType>();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Restore session from localStorage
+    const savedAddress = localStorage.getItem('walletAddress');
+    if (savedAddress) {
+      setAddress(savedAddress);
+    }
+  }, []);
 
   const handleConnect = async (walletAddress: string) => {
     try {
@@ -23,11 +32,33 @@ export default function Home() {
         nickname: null,
       });
       setAddress(walletAddress);
+      // Save to localStorage for session persistence
+      localStorage.setItem('walletAddress', walletAddress);
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to register user",
+      });
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await disconnectWallet();
+      localStorage.removeItem('walletAddress');
+      setAddress(undefined);
+      setShowProfile(false);
+      setSelectedUser(undefined);
+      toast({
+        title: "Logged Out",
+        description: "Successfully disconnected wallet",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to logout",
       });
     }
   };
@@ -41,23 +72,33 @@ export default function Home() {
           </h1>
           <div className="flex gap-4 items-center">
             {address && (
-              <Button
-                variant="outline"
-                onClick={() => setShowProfile(!showProfile)}
-                className="gap-2"
-              >
-                {showProfile ? (
-                  <>
-                    <User className="h-4 w-4" />
-                    Chat
-                  </>
-                ) : (
-                  <>
-                    <Settings className="h-4 w-4" />
-                    Profile
-                  </>
-                )}
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowProfile(!showProfile)}
+                  className="gap-2"
+                >
+                  {showProfile ? (
+                    <>
+                      <User className="h-4 w-4" />
+                      Chat
+                    </>
+                  ) : (
+                    <>
+                      <Settings className="h-4 w-4" />
+                      Profile
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleLogout}
+                  className="gap-2 text-red-500 hover:text-red-600"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </Button>
+              </>
             )}
             <WalletConnect
               onConnect={handleConnect}

@@ -15,6 +15,7 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   async getUser(address: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.address, address));
+    console.log("getUser result:", user);
     return user;
   }
 
@@ -29,10 +30,14 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
+    console.log("createUser result:", user);
     return user;
   }
 
   async updateUser(address: string, update: UpdateUser): Promise<User> {
+    console.log("Updating user with address:", address);
+    console.log("Update data:", update);
+
     const [user] = await db
       .update(users)
       .set(update)
@@ -43,6 +48,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error("User not found");
     }
 
+    console.log("updateUser result:", user);
     return user;
   }
 
