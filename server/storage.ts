@@ -1,6 +1,6 @@
 import { users, messages, friends, type User, type InsertUser, type Message, type InsertMessage, type UpdateUser, type Friend, type InsertFriendRequest } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, lt, in } from "drizzle-orm";
+import { eq, and, or, lt, in as inOp } from "drizzle-orm";
 import { subDays } from "date-fns";
 
 export interface IStorage {
@@ -171,7 +171,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(users)
         .where(
-          in(users.address, friendAddresses)
+          inOp(users.address, friendAddresses)
         );
 
       return Array.isArray(friendUsers) ? friendUsers : [];
