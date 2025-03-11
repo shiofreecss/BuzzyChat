@@ -28,7 +28,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
   });
 
   const { data: friendRequests = [] } = useQuery<Friend[]>({
-    queryKey: ['/api/friends/requests', currentAddress],
+    queryKey: [`/api/friends/requests/${currentAddress}`],
   });
 
   const sendFriendRequest = async (recipientAddress: string) => {
