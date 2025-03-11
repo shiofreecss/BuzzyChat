@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -119,16 +120,6 @@ export default function UserProfile({ address }: UserProfileProps) {
             <div>
               <Label>Wallet Address</Label>
               <p className="text-sm font-mono break-all">{address}</p>
-            </div>
-              <p className="text-lg">{user?.username || "Not set"}</p>
-            </div>
-            <div>
-              <Label>Nickname</Label>
-              <p className="text-lg">{user?.nickname || "Not set"}</p>
-            </div>
-            <div>
-              <Label>Wallet Address</Label>
-              <p className="text-sm font-mono">{address}</p>
             </div>
           </div>
         )}
