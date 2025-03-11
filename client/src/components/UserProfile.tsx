@@ -20,12 +20,13 @@ export default function UserProfile({ address }: UserProfileProps) {
   const [nickname, setNickname] = useState("");
 
   const { data: user } = useQuery<User>({
-    queryKey: [`/api/users/${address}`],
+    queryKey: ['user', address],
     queryFn: async () => {
       const res = await fetch(`/api/users/${address}`);
       if (!res.ok) throw new Error("Failed to fetch user");
       return res.json();
     },
+    enabled: !!address,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,7 +38,7 @@ export default function UserProfile({ address }: UserProfileProps) {
       };
 
       await apiRequest("PATCH", `/api/users/${address}`, updateData);
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${address}`] });
+      queryClient.invalidateQueries({ queryKey: ['user', address] });
       
       toast({
         title: "Profile Updated",
