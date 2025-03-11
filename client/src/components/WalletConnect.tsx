@@ -9,6 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import MetaMaskLogo from "@/assets/metamask-logo.svg";
+import CoinbaseLogo from "@/assets/coinbase-logo.svg";
 
 interface WalletConnectProps {
   onConnect: (address: string) => void;
@@ -60,12 +62,20 @@ export default function WalletConnect({ onConnect, connected, address }: WalletC
           {connecting ? "Connecting..." : "Connect Wallet"}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuItem onClick={() => handleConnect('metamask')}>
-          Connect MetaMask
+      <DropdownMenuContent className="w-56">
+        <DropdownMenuItem 
+          onClick={() => handleConnect('metamask')} 
+          className="flex items-center gap-2 py-2 cursor-pointer"
+        >
+          <img src={MetaMaskLogo} alt="MetaMask" className="w-6 h-6" />
+          <span>Connect MetaMask</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleConnect('coinbase')}>
-          Connect Coinbase Wallet
+        <DropdownMenuItem 
+          onClick={() => handleConnect('coinbase')} 
+          className="flex items-center gap-2 py-2 cursor-pointer"
+        >
+          <img src={CoinbaseLogo} alt="Coinbase Wallet" className="w-6 h-6" />
+          <span>Connect Coinbase Wallet</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
