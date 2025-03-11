@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertUserSchema, insertMessageSchema, updateUserSchema } from "@shared/schema";
+import { insertUserSchema, insertMessageSchema, updateUserSchema, insertFriendRequestSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -18,6 +18,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const message = JSON.parse(data.toString());
         const validatedMessage = insertMessageSchema.parse(message);
+
+        // Check if this is a private message and if users are friends
+        if (validatedMessage.toAddress) {
+          const areFriends = await storage.checkFriendship(
+            validatedMessage.fromAddress,
+            validatedMessage.toAddress
+          );
+
+          if (!areFriends) {
+            ws.send(JSON.stringify({ 
+              error: "You can only send messages to users in your friends list" 
+            }));
+            return;
+          }
+        }
+
         const savedMessage = await storage.addMessage(validatedMessage);
 
         // Broadcast to all connected clients
@@ -105,6 +121,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to clear messages" });
     }
   });
+
+  // Friend request endpoints
+  app.post('/api/friends/request', async (req, res) => {
+    try {
+      const requestData = insertFriendRequestSchema.parse(req.body);
+      const friend = await storage.sendFriendRequest(requestData);
+      res.json(friend);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid friend request data" });
+    }
+  });
+
+  app.post('/api/friends/accept/:requestId', async (req, res) => {
+    try {
+      const { requestId } = req.params;
+      const friend = await storage.acceptFriendRequest(parseInt(requestId));
+      res.json(friend);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid request" });
+    }
+  });
+
+  app.get('/api/friends/requests/:address', async (req, res) => {
+    try {
+      const { address } = req.params;
+      const requests = await storage.getFriendRequests(address);
+      res.json(requests);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch friend requests" });
+    }
+  });
+
+  app.get('/api/friends/:address', async (req, res) => {
+    try {
+      const { address } = req.params;
+      const friends = await storage.getFriends(address);
+      res.json(friends);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch friends" });
+    }
+  });
+
+  // Setup message cleanup cron job
+  setInterval(async () => {
+    try {
+      await storage.cleanupOldMessages();
+      console.log("Old messages cleaned up successfully");
+    } catch (error) {
+      console.error("Failed to clean up old messages:", error);
+    }
+  }, 24 * 60 * 60 * 1000); // Run daily
 
   return httpServer;
 }
