@@ -1,24 +1,33 @@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { connectWallet, shortenAddress } from "@/lib/web3";
+import { connectWallet, disconnectWallet, shortenAddress } from "@/lib/web3";
 import { useState } from "react";
-import { Wallet } from "lucide-react";
+import { Wallet, Settings, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import MetaMaskLogo from "@/assets/metamask-logo.svg";
 import CoinbaseLogo from "@/assets/coinbase-logo.svg";
 
 interface WalletConnectProps {
   onConnect: (address: string) => void;
+  onProfileClick: () => void;
+  onLogout: () => void;
   connected: boolean;
   address?: string;
 }
 
-export default function WalletConnect({ onConnect, connected, address }: WalletConnectProps) {
+export default function WalletConnect({ 
+  onConnect, 
+  onProfileClick, 
+  onLogout,
+  connected, 
+  address 
+}: WalletConnectProps) {
   const [connecting, setConnecting] = useState(false);
   const { toast } = useToast();
 
@@ -44,10 +53,28 @@ export default function WalletConnect({ onConnect, connected, address }: WalletC
 
   if (connected) {
     return (
-      <Button disabled className="bg-gradient-to-r from-purple-500 to-blue-500">
-        <Wallet className="mr-2 h-4 w-4" />
-        {shortenAddress(address!)}
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button className="bg-gradient-to-r from-purple-500 to-blue-500">
+            <Wallet className="mr-2 h-4 w-4" />
+            {shortenAddress(address!)}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem onClick={onProfileClick} className="cursor-pointer">
+            <Settings className="mr-2 h-4 w-4" />
+            Profile Settings
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
+            onClick={onLogout}
+            className="cursor-pointer text-red-500 focus:text-red-500"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     );
   }
 
