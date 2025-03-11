@@ -109,6 +109,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async acceptFriendRequest(requestId: number): Promise<Friend> {
+    console.log('Accepting friend request in storage:', requestId);
     const [friend] = await db
       .update(friends)
       .set({ status: 'accepted' })
@@ -119,6 +120,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Friend request not found");
     }
 
+    console.log('Friend request updated in database:', friend);
     return friend;
   }
 

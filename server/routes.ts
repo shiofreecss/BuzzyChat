@@ -161,9 +161,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/friends/accept/:requestId', async (req, res) => {
     try {
       const { requestId } = req.params;
+      console.log('Starting friend request acceptance:', requestId);
       const friend = await storage.acceptFriendRequest(parseInt(requestId));
+      console.log('Friend request accepted successfully:', friend);
       res.json(friend);
     } catch (error) {
+      console.error("Error accepting friend request:", error);
       res.status(400).json({ error: "Invalid request" });
     }
   });

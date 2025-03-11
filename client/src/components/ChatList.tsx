@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, MessageSquare, UserPlus, UserCheck } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User, Friend } from "@shared/schema";
 import { shortenAddress } from "@/lib/web3";
 import { useToast } from "@/hooks/use-toast";
@@ -19,21 +19,31 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"all" | "friends">("friends");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: users = [], refetch: refetchUsers } = useQuery<User[]>({
-    queryKey: ['users'],
-    queryFn: () => apiRequest('GET', '/api/users'),
+    queryKey: ['/api/users'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/users');
+      return res.json();
+    }
   });
 
   const { data: friends = [], refetch: refetchFriends } = useQuery<User[]>({
-    queryKey: ['friends', currentAddress],
-    queryFn: () => apiRequest('GET', `/api/friends/${currentAddress}`),
+    queryKey: ['/api/friends', currentAddress],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/friends/${currentAddress}`);
+      return res.json();
+    },
     enabled: !!currentAddress,
   });
 
   const { data: friendRequests = [], refetch: refetchFriendRequests } = useQuery<Friend[]>({
-    queryKey: ['friendRequests', currentAddress],
-    queryFn: () => apiRequest('GET', `/api/friends/requests/${currentAddress}`),
+    queryKey: ['/api/friends/requests', currentAddress],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/friends/requests/${currentAddress}`);
+      return res.json();
+    },
     enabled: !!currentAddress,
   });
 
@@ -61,14 +71,28 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
 
   const acceptFriendRequest = async (requestId: number) => {
     try {
+      console.log('Starting friend request acceptance:', requestId);
       await apiRequest('POST', `/api/friends/accept/${requestId}`);
-      refetchFriends(); // Refetch friends list after accepting
-      refetchFriendRequests(); // Refetch friend requests list after accepting
+      console.log('Friend request accepted on server');
+
+      // Invalidate and immediately refetch all relevant queries
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['/api/friends', currentAddress] }),
+        queryClient.refetchQueries({ queryKey: ['/api/friends/requests', currentAddress] }),
+        queryClient.refetchQueries({ queryKey: ['/api/users'] })
+      ]);
+
+      console.log('Friend request accepted, queries refetched');
+
       toast({
         title: "Friend Request Accepted",
         description: "You are now friends with this user",
       });
+
+      // Switch to friends view after accepting
+      setViewMode("friends");
     } catch (error) {
+      console.error('Error accepting friend request:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -85,17 +109,17 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
     return friendRequests.some(request => request.requestorAddress === address);
   };
 
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = users.filter(user =>
     user.address !== currentAddress &&
     (user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     user.address.toLowerCase().includes(searchQuery.toLowerCase()))
+      user.address.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
     <Card className="w-80 h-[600px] flex flex-col">
       <div className="p-4 border-b">
         <div className="flex justify-between mb-3">
-          <Button 
+          <Button
             variant={viewMode === "friends" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("friends")}
@@ -103,7 +127,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
           >
             Friends
           </Button>
-          <Button 
+          <Button
             variant={viewMode === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("all")}
@@ -129,7 +153,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
           {friendRequests.map((request) => (
             <div key={request.id} className="flex items-center justify-between mb-2">
               <span className="text-sm">{shortenAddress(request.requestorAddress)}</span>
-              <Button 
+              <Button
                 size="sm"
                 onClick={() => acceptFriendRequest(request.id)}
                 className="bg-green-600 hover:bg-green-700"
@@ -151,7 +175,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
               </div>
             )}
             {friends
-              .filter(friend => 
+              .filter(friend =>
                 friend.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 friend.address.toLowerCase().includes(searchQuery.toLowerCase())
               )
