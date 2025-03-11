@@ -109,6 +109,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async acceptFriendRequest(requestId: number): Promise<Friend> {
+    console.log('Accepting friend request in storage:', requestId);
     const [friend] = await db
       .update(friends)
       .set({ status: 'accepted' })
@@ -119,6 +120,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Friend request not found");
     }
 
+    console.log('Friend request updated in database:', friend);
     return friend;
   }
 
@@ -135,6 +137,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFriends(address: string): Promise<User[]> {
+    console.log('Getting friends for address:', address);
     const acceptedFriends = await db
       .select()
       .from(friends)
@@ -148,14 +151,27 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
+    console.log('Found accepted friends:', acceptedFriends);
+
+    if (acceptedFriends.length === 0) {
+      return [];
+    }
+
     const friendAddresses = acceptedFriends.map(f =>
       f.requestorAddress === address ? f.recipientAddress : f.requestorAddress
     );
 
-    return await db
+    const friendUsers = await db
       .select()
       .from(users)
-      .where(users.address.in(friendAddresses));
+      .where(
+        or(
+          ...friendAddresses.map(addr => eq(users.address, addr))
+        )
+      );
+
+    console.log('Retrieved friend users:', friendUsers);
+    return friendUsers;
   }
 
   async checkFriendship(address1: string, address2: string): Promise<boolean> {

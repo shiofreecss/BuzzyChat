@@ -26,7 +26,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
   });
 
   const { data: friends = [] } = useQuery<User[]>({
-    queryKey: ['/api/friends', currentAddress],
+    queryKey: [`/api/friends/${currentAddress}`],
   });
 
   const { data: friendRequests = [] } = useQuery<Friend[]>({
@@ -55,14 +55,17 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
 
   const acceptFriendRequest = async (requestId: number) => {
     try {
+      console.log('Accepting friend request:', requestId);
       await apiRequest('POST', `/api/friends/accept/${requestId}`);
+      console.log('Friend request accepted, refetching data...');
 
-      // Force immediate refetch of friends and requests
+      // Force immediate refetch of both queries
       await Promise.all([
-        queryClient.refetchQueries({ queryKey: ['/api/friends', currentAddress] }),
+        queryClient.refetchQueries({ queryKey: [`/api/friends/${currentAddress}`] }),
         queryClient.refetchQueries({ queryKey: [`/api/friends/requests/${currentAddress}`] })
       ]);
 
+      console.log('Queries refetched');
       toast({
         title: "Friend Request Accepted",
         description: "You are now friends with this user",
@@ -71,6 +74,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
       // Switch to friends view
       setViewMode("friends");
     } catch (error) {
+      console.error('Error accepting friend request:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -103,7 +107,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
             onClick={() => setViewMode("friends")}
             className="w-1/2 bg-purple-600 hover:bg-purple-700"
           >
-            Friends
+            Friends ({friends.length})
           </Button>
           <Button 
             variant={viewMode === "all" ? "default" : "outline"}
@@ -127,7 +131,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
 
       {friendRequests.length > 0 && (
         <div className="p-4 border-b border-gray-800 bg-gray-800/50">
-          <h3 className="text-sm font-medium mb-2 text-gray-200">Friend Requests</h3>
+          <h3 className="text-sm font-medium mb-2 text-gray-200">Friend Requests ({friendRequests.length})</h3>
           {friendRequests.map((request) => (
             <div key={request.id} className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-300">{shortenAddress(request.requestorAddress)}</span>
@@ -146,39 +150,39 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
       <ScrollArea className="flex-1">
         {viewMode === "friends" ? (
           <div className="p-4 space-y-2">
-            {friends.length === 0 && (
+            {friends.length === 0 ? (
               <div className="text-center py-8 text-gray-400">
                 <p>No friends yet</p>
-                <p className="text-xs mt-2">Add friends to chat with them</p>
+                <p className="text-xs mt-2">Switch to "All Users" to add friends</p>
               </div>
-            )}
-            {friends
-              .filter(friend => 
-                friend.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                friend.address.toLowerCase().includes(searchQuery.toLowerCase())
-              )
-              .map((friend) => (
-                <div key={friend.id} className="flex items-center justify-between">
-                  <Button
-                    variant="ghost"
-                    className="flex-1 justify-start gap-2"
-                    onClick={() => onSelectUser(friend)}
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    <div className="text-left">
-                      <div className="font-medium">
-                        {friend.username || shortenAddress(friend.address)}
-                      </div>
-                      {friend.username && (
-                        <div className="text-xs text-gray-400">
-                          {shortenAddress(friend.address)}
+            ) : (
+              friends
+                .filter(friend => 
+                  friend.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  friend.address.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+                .map((friend) => (
+                  <div key={friend.id} className="flex items-center justify-between">
+                    <Button
+                      variant="ghost"
+                      className="flex-1 justify-start gap-2"
+                      onClick={() => onSelectUser(friend)}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      <div className="text-left">
+                        <div className="font-medium">
+                          {friend.username || shortenAddress(friend.address)}
                         </div>
-                      )}
-                    </div>
-                  </Button>
-                </div>
-              ))
-            }
+                        {friend.username && (
+                          <div className="text-xs text-gray-400">
+                            {shortenAddress(friend.address)}
+                          </div>
+                        )}
+                      </div>
+                    </Button>
+                  </div>
+                ))
+            )}
           </div>
         ) : (
           <div className="p-4 space-y-2">
