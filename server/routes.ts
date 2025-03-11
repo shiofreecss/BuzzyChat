@@ -8,16 +8,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
 
-  // Store connected clients
-  const clients = new Set<WebSocket>();
+  // Store connected clients with their addresses
+  const clients = new Map<string, WebSocket>();
 
   wss.on('connection', (ws) => {
-    clients.add(ws);
+    let clientAddress: string | undefined;
 
     ws.on('message', async (data) => {
       try {
         const message = JSON.parse(data.toString());
         const validatedMessage = insertMessageSchema.parse(message);
+
+        // Store the client's address for future reference
+        if (!clientAddress) {
+          clientAddress = validatedMessage.fromAddress;
+          clients.set(clientAddress, ws);
+        }
 
         // Check if this is a private message and if users are friends
         if (validatedMessage.toAddress) {
@@ -36,30 +42,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const savedMessage = await storage.addMessage(validatedMessage);
 
-        // Broadcast to all connected clients
+        // Broadcast message based on type (private or public)
         const broadcastData = JSON.stringify(savedMessage);
-        clients.forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(broadcastData);
+
+        if (validatedMessage.toAddress) {
+          // Private message: send only to sender and recipient
+          const recipientWs = clients.get(validatedMessage.toAddress);
+          if (recipientWs?.readyState === WebSocket.OPEN) {
+            recipientWs.send(broadcastData);
           }
-        });
+          ws.send(broadcastData);
+        } else {
+          // Public message: broadcast to all connected clients
+          clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(broadcastData);
+            }
+          });
+        }
       } catch (error) {
+        console.error('WebSocket message error:', error);
         ws.send(JSON.stringify({ error: "Invalid message format" }));
       }
     });
 
     ws.on('close', () => {
-      clients.delete(ws);
+      if (clientAddress) {
+        clients.delete(clientAddress);
+      }
     });
+
+    // Send a welcome message
+    ws.send(JSON.stringify({ 
+      connected: true,
+      timestamp: new Date().toISOString()
+    }));
   });
 
-  // Get all users
+  // Regular HTTP routes
   app.get('/api/users', async (_req, res) => {
     const users = await storage.getAllUsers();
     res.json(users);
   });
 
-  // Get user by address
   app.get('/api/users/:address', async (req, res) => {
     try {
       const { address } = req.params;

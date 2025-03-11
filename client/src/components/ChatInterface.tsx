@@ -8,7 +8,7 @@ import { Send, Trash2 } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import type { Message, User } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient"; // Fixed import
+import { apiRequest } from "@/lib/queryClient";
 
 interface ChatInterfaceProps {
   address: string;
@@ -16,11 +16,13 @@ interface ChatInterfaceProps {
   onSelectUser?: (user?: User) => void;
 }
 
-export default function ChatInterface({ address, selectedUser }: ChatInterfaceProps) {
+export default function ChatInterface({ address, selectedUser, onSelectUser }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isConnected, setIsConnected] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const socketRef = useRef<WebSocket>();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -32,7 +34,9 @@ export default function ChatInterface({ address, selectedUser }: ChatInterfacePr
     setMessages(initialMessages);
   }, [initialMessages]);
 
-  useEffect(() => {
+  const connectWebSocket = () => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) return;
+
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
 
@@ -42,6 +46,7 @@ export default function ChatInterface({ address, selectedUser }: ChatInterfacePr
     socketRef.current.onopen = () => {
       console.log("WebSocket connection established");
       setIsConnected(true);
+      setIsReconnecting(false);
       toast({
         title: "Connected",
         description: "Chat connection established",
@@ -50,8 +55,20 @@ export default function ChatInterface({ address, selectedUser }: ChatInterfacePr
 
     socketRef.current.onmessage = (event) => {
       console.log("Received message:", event.data);
-      const message = JSON.parse(event.data) as Message;
-      setMessages(prev => [...prev, message]);
+      try {
+        const data = JSON.parse(event.data);
+        if (data.error) {
+          toast({
+            variant: "destructive",
+            title: "Message Error",
+            description: data.error,
+          });
+          return;
+        }
+        setMessages(prev => [...prev, data]);
+      } catch (error) {
+        console.error("Failed to parse message:", error);
+      }
     };
 
     socketRef.current.onerror = (error) => {
@@ -66,16 +83,26 @@ export default function ChatInterface({ address, selectedUser }: ChatInterfacePr
     socketRef.current.onclose = () => {
       console.log("WebSocket connection closed");
       setIsConnected(false);
-      toast({
-        variant: "destructive",
-        title: "Disconnected",
-        description: "Chat connection lost",
-      });
+
+      // Only attempt to reconnect if we're not already in the process
+      if (!isReconnecting) {
+        setIsReconnecting(true);
+        reconnectTimeoutRef.current = setTimeout(() => {
+          console.log("Attempting to reconnect...");
+          connectWebSocket();
+        }, 5000); // Try to reconnect after 5 seconds
+      }
     };
+  };
+
+  useEffect(() => {
+    connectWebSocket();
 
     return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
       if (socketRef.current) {
-        console.log("Closing WebSocket connection");
         socketRef.current.close();
       }
     };
