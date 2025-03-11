@@ -1,17 +1,22 @@
 import { useState } from "react";
 import WalletConnect from "@/components/WalletConnect";
 import ChatInterface from "@/components/ChatInterface";
+import UserProfile from "@/components/UserProfile";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { User, Settings } from "lucide-react";
 
 export default function Home() {
   const [address, setAddress] = useState<string>();
+  const [showProfile, setShowProfile] = useState(false);
   const { toast } = useToast();
 
   const handleConnect = async (walletAddress: string) => {
     try {
       await apiRequest('POST', '/api/users', {
         address: walletAddress,
+        username: null,
         nickname: null,
       });
       setAddress(walletAddress);
@@ -31,15 +36,40 @@ export default function Home() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
             Buzzy.Chat
           </h1>
-          <WalletConnect
-            onConnect={handleConnect}
-            connected={!!address}
-            address={address}
-          />
+          <div className="flex gap-4 items-center">
+            {address && (
+              <Button
+                variant="outline"
+                onClick={() => setShowProfile(!showProfile)}
+                className="gap-2"
+              >
+                {showProfile ? (
+                  <>
+                    <User className="h-4 w-4" />
+                    Chat
+                  </>
+                ) : (
+                  <>
+                    <Settings className="h-4 w-4" />
+                    Profile
+                  </>
+                )}
+              </Button>
+            )}
+            <WalletConnect
+              onConnect={handleConnect}
+              connected={!!address}
+              address={address}
+            />
+          </div>
         </div>
 
         {address ? (
-          <ChatInterface address={address} />
+          showProfile ? (
+            <UserProfile address={address} />
+          ) : (
+            <ChatInterface address={address} />
+          )
         ) : (
           <div className="text-center py-20">
             <h2 className="text-2xl font-semibold mb-4">
