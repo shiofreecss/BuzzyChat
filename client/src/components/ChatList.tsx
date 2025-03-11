@@ -17,6 +17,7 @@ interface ChatListProps {
 
 export default function ChatList({ currentAddress, onSelectUser }: ChatListProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"all" | "friends">("friends");
   const { toast } = useToast();
 
   const { data: users = [] } = useQuery<User[]>({
@@ -84,10 +85,28 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
   return (
     <Card className="w-80 h-[600px] flex flex-col">
       <div className="p-4 border-b">
+        <div className="flex justify-between mb-3">
+          <Button 
+            variant={viewMode === "friends" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("friends")}
+            className="w-1/2"
+          >
+            Friends
+          </Button>
+          <Button 
+            variant={viewMode === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("all")}
+            className="w-1/2"
+          >
+            All Users
+          </Button>
+        </div>
         <div className="relative">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search users..."
+            placeholder={viewMode === "friends" ? "Search friends..." : "Search users..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-8"
@@ -114,40 +133,78 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
       )}
 
       <ScrollArea className="flex-1">
-        <div className="p-4 space-y-2">
-          {filteredUsers.map((user) => (
-            <div key={user.id} className="flex items-center justify-between">
-              <Button
-                variant="ghost"
-                className="flex-1 justify-start gap-2"
-                onClick={() => isFriend(user.address) && onSelectUser(user)}
-                disabled={!isFriend(user.address)}
-              >
-                <MessageSquare className="h-4 w-4" />
-                <div className="text-left">
-                  <div className="font-medium">
-                    {user.username || shortenAddress(user.address)}
-                  </div>
-                  {user.username && (
-                    <div className="text-xs text-muted-foreground">
-                      {shortenAddress(user.address)}
+        {viewMode === "friends" ? (
+          <div className="p-4 space-y-2">
+            {friends.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No friends yet</p>
+                <p className="text-xs mt-2">Add friends to chat with them</p>
+              </div>
+            )}
+            {friends
+              .filter(friend => 
+                friend.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                friend.address.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .map((friend) => (
+                <div key={friend.id} className="flex items-center justify-between">
+                  <Button
+                    variant="ghost"
+                    className="flex-1 justify-start gap-2"
+                    onClick={() => onSelectUser(friend)}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    <div className="text-left">
+                      <div className="font-medium">
+                        {friend.username || shortenAddress(friend.address)}
+                      </div>
+                      {friend.username && (
+                        <div className="text-xs text-muted-foreground">
+                          {shortenAddress(friend.address)}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </Button>
                 </div>
-              </Button>
-              {!isFriend(user.address) && !hasPendingRequest(user.address) && (
+              ))
+            }
+          </div>
+        ) : (
+          <div className="p-4 space-y-2">
+            {filteredUsers.map((user) => (
+              <div key={user.id} className="flex items-center justify-between">
                 <Button
                   variant="ghost"
-                  size="icon"
-                  onClick={() => sendFriendRequest(user.address)}
-                  className="ml-2"
+                  className="flex-1 justify-start gap-2"
+                  onClick={() => isFriend(user.address) && onSelectUser(user)}
+                  disabled={!isFriend(user.address)}
                 >
-                  <UserPlus className="h-4 w-4" />
+                  <MessageSquare className="h-4 w-4" />
+                  <div className="text-left">
+                    <div className="font-medium">
+                      {user.username || shortenAddress(user.address)}
+                    </div>
+                    {user.username && (
+                      <div className="text-xs text-muted-foreground">
+                        {shortenAddress(user.address)}
+                      </div>
+                    )}
+                  </div>
                 </Button>
-              )}
-            </div>
-          ))}
-        </div>
+                {!isFriend(user.address) && !hasPendingRequest(user.address) && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => sendFriendRequest(user.address)}
+                    className="ml-2"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </ScrollArea>
     </Card>
   );
