@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { shortenAddress } from "@/lib/web3";
 import { type Message } from "@shared/schema";
 import { format } from "date-fns";
-import { Smile, PlusCircle } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 import { useState } from "react";
@@ -50,8 +50,8 @@ export default function ChatMessage({ message, isOwn, onReact }: ChatMessageProp
   if (!message) return null;
 
   return (
-    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4`}>
-      <Card className={`max-w-[80%] p-3 ${
+    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4 group`}>
+      <Card className={`max-w-[80%] p-3 relative ${
         isOwn 
           ? 'bg-purple-600 text-white' 
           : 'bg-gray-800 text-gray-100'
@@ -75,31 +75,28 @@ export default function ChatMessage({ message, isOwn, onReact }: ChatMessageProp
           </div>
         )}
 
-        {/* Reaction Button */}
-        <div className="mt-2">
-          <Popover open={showPicker} onOpenChange={setShowPicker}>
-            <PopoverTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="h-6 px-2 text-white/70 hover:text-white hover:bg-white/10"
-              >
-                <PlusCircle className="h-4 w-4 mr-1" />
-                React
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="p-0 border-none">
-              <Picker 
-                data={data} 
-                onEmojiSelect={handleEmojiSelect}
-                theme="dark"
-                emojiSize={20}
-                emojiButtonSize={28}
-                maxFrequentRows={1}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
+        {/* Quick Reaction Button */}
+        <Popover open={showPicker} onOpenChange={setShowPicker}>
+          <PopoverTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="opacity-0 group-hover:opacity-100 absolute -right-8 top-2 h-6 w-6 p-1 text-gray-400 hover:text-gray-200 hover:bg-gray-700/50 transition-opacity"
+            >
+              <PlusCircle className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="p-0 border-none" side="right">
+            <Picker 
+              data={data} 
+              onEmojiSelect={handleEmojiSelect}
+              theme="dark"
+              emojiSize={20}
+              emojiButtonSize={28}
+              maxFrequentRows={1}
+            />
+          </PopoverContent>
+        </Popover>
       </Card>
     </div>
   );
