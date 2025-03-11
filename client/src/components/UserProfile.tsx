@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,9 +18,10 @@ export default function UserProfile({ address }: UserProfileProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [username, setUsername] = useState("");
   const [nickname, setNickname] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: user } = useQuery<User>({
-    queryKey: ['user', address],
+  const { data: user, isLoading } = useQuery<User>({
+    queryKey: ['/api/users', address],
     queryFn: async () => {
       const res = await fetch(`/api/users/${address}`);
       if (!res.ok) throw new Error("Failed to fetch user");
@@ -30,17 +30,28 @@ export default function UserProfile({ address }: UserProfileProps) {
     enabled: !!address,
   });
 
+  useEffect(() => {
+    if (user && !isEditing) {
+      setUsername(user.username || "");
+      setNickname(user.nickname || "");
+    }
+  }, [user, isEditing]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     try {
+      setIsSubmitting(true);
       const updateData: UpdateUser = {
         username: username || null,
         nickname: nickname || null,
       };
 
       await apiRequest("PATCH", `/api/users/${address}`, updateData);
-      queryClient.invalidateQueries({ queryKey: ['user', address] });
-      
+      await queryClient.invalidateQueries({ queryKey: ['/api/users', address] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated",
@@ -52,6 +63,8 @@ export default function UserProfile({ address }: UserProfileProps) {
         title: "Update Failed",
         description: (error as Error).message,
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -62,6 +75,21 @@ export default function UserProfile({ address }: UserProfileProps) {
     }
     setIsEditing(true);
   };
+
+  if (isLoading) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardContent className="p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-8 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-8 bg-gray-200 rounded"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -85,6 +113,7 @@ export default function UserProfile({ address }: UserProfileProps) {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter username"
+                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
@@ -94,11 +123,19 @@ export default function UserProfile({ address }: UserProfileProps) {
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
                 placeholder="Enter nickname"
+                disabled={isSubmitting}
               />
             </div>
             <div className="flex gap-2">
-              <Button type="submit">Save Changes</Button>
-              <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : "Save Changes"}
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsEditing(false)}
+                disabled={isSubmitting}
+              >
                 Cancel
               </Button>
             </div>
