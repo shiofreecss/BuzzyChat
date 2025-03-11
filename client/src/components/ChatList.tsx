@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, MessageSquare, UserPlus, UserCheck } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User, Friend } from "@shared/schema";
 import { shortenAddress } from "@/lib/web3";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"all" | "friends">("friends");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ['/api/users'],
@@ -55,10 +56,20 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
   const acceptFriendRequest = async (requestId: number) => {
     try {
       await apiRequest('POST', `/api/friends/accept/${requestId}`);
+
+      // Force immediate refetch of friends and requests
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['/api/friends', currentAddress] }),
+        queryClient.refetchQueries({ queryKey: [`/api/friends/requests/${currentAddress}`] })
+      ]);
+
       toast({
         title: "Friend Request Accepted",
         description: "You are now friends with this user",
       });
+
+      // Switch to friends view
+      setViewMode("friends");
     } catch (error) {
       toast({
         variant: "destructive",
@@ -83,14 +94,14 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
   );
 
   return (
-    <Card className="w-80 h-[600px] flex flex-col">
-      <div className="p-4 border-b">
+    <Card className="w-80 h-[600px] flex flex-col bg-gray-900">
+      <div className="p-4 border-b border-gray-800">
         <div className="flex justify-between mb-3">
           <Button 
             variant={viewMode === "friends" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("friends")}
-            className="w-1/2"
+            className="w-1/2 bg-purple-600 hover:bg-purple-700"
           >
             Friends
           </Button>
@@ -109,17 +120,17 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
             placeholder={viewMode === "friends" ? "Search friends..." : "Search users..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8"
+            className="pl-8 bg-gray-800 border-gray-700"
           />
         </div>
       </div>
 
       {friendRequests.length > 0 && (
-        <div className="p-4 border-b bg-muted/50">
-          <h3 className="text-sm font-medium mb-2">Friend Requests</h3>
+        <div className="p-4 border-b border-gray-800 bg-gray-800/50">
+          <h3 className="text-sm font-medium mb-2 text-gray-200">Friend Requests</h3>
           {friendRequests.map((request) => (
             <div key={request.id} className="flex items-center justify-between mb-2">
-              <span className="text-sm">{shortenAddress(request.requestorAddress)}</span>
+              <span className="text-sm text-gray-300">{shortenAddress(request.requestorAddress)}</span>
               <Button 
                 size="sm"
                 onClick={() => acceptFriendRequest(request.id)}
@@ -136,7 +147,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
         {viewMode === "friends" ? (
           <div className="p-4 space-y-2">
             {friends.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-gray-400">
                 <p>No friends yet</p>
                 <p className="text-xs mt-2">Add friends to chat with them</p>
               </div>
@@ -159,7 +170,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
                         {friend.username || shortenAddress(friend.address)}
                       </div>
                       {friend.username && (
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs text-gray-400">
                           {shortenAddress(friend.address)}
                         </div>
                       )}
@@ -185,7 +196,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
                       {user.username || shortenAddress(user.address)}
                     </div>
                     {user.username && (
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-gray-400">
                         {shortenAddress(user.address)}
                       </div>
                     )}
@@ -196,7 +207,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
                     variant="ghost"
                     size="icon"
                     onClick={() => sendFriendRequest(user.address)}
-                    className="ml-2"
+                    className="ml-2 text-purple-400 hover:text-purple-300"
                   >
                     <UserPlus className="h-4 w-4" />
                   </Button>

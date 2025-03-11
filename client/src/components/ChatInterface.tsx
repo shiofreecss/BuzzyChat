@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Send, Trash2 } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import type { Message, User } from "@shared/schema";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
 interface ChatInterfaceProps {
@@ -25,6 +25,7 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: initialMessages = [] } = useQuery<Message[]>({
     queryKey: ['/api/messages'],
@@ -42,7 +43,7 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]); // Scroll whenever messages change
+  }, [messages]);
 
   const connectWebSocket = () => {
     if (socketRef.current?.readyState === WebSocket.OPEN) return;
@@ -75,6 +76,10 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
           });
           return;
         }
+
+        // If it's a welcome message, don't add it to chat
+        if (data.connected) return;
+
         setMessages(prev => [...prev, data]);
       } catch (error) {
         console.error("Failed to parse message:", error);
@@ -134,7 +139,7 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
   const clearMessages = async () => {
     try {
       await apiRequest("DELETE", "/api/messages");
-      setMessages([]);
+      await queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
       toast({
         title: "Chat Cleared",
         description: "All messages have been cleared",
@@ -148,6 +153,7 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
     }
   };
 
+  // Filter messages based on the selected chat mode (public or private)
   const filteredMessages = selectedUser
     ? messages.filter(msg =>
         msg && msg.fromAddress && msg.toAddress && (
@@ -187,6 +193,7 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
           <Trash2 className="h-5 w-5" />
         </Button>
       </div>
+
       <ScrollArea className="flex-1 p-4">
         {filteredMessages.map((msg) => (
           <ChatMessage
@@ -195,8 +202,9 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
             isOwn={msg.fromAddress === address}
           />
         ))}
-        <div ref={messagesEndRef} /> {/* Scroll anchor */}
+        <div ref={messagesEndRef} />
       </ScrollArea>
+
       <div className="p-4 border-t border-gray-800 flex gap-2">
         <Input
           value={newMessage}
