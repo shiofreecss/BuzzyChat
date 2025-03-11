@@ -91,17 +91,17 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
     return friendRequests.some(request => request.requestorAddress === address);
   };
 
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = users.filter(user =>
     user.address !== currentAddress &&
     (user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     user.address.toLowerCase().includes(searchQuery.toLowerCase()))
+      user.address.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
-    <Card className="w-80 h-[600px] flex flex-col bg-gray-900">
+    <Card className="w-full md:w-80 h-[calc(100vh-8rem)] sm:h-[600px] flex flex-col bg-gray-900">
       <div className="p-4 border-b border-gray-800">
         <div className="flex justify-between mb-3">
-          <Button 
+          <Button
             variant={viewMode === "friends" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("friends")}
@@ -109,7 +109,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
           >
             Friends ({friends.length})
           </Button>
-          <Button 
+          <Button
             variant={viewMode === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("all")}
@@ -135,7 +135,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
           {friendRequests.map((request) => (
             <div key={request.id} className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-300">{shortenAddress(request.requestorAddress)}</span>
-              <Button 
+              <Button
                 size="sm"
                 onClick={() => acceptFriendRequest(request.id)}
                 className="bg-green-600 hover:bg-green-700"
@@ -157,7 +157,7 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
               </div>
             ) : (
               friends
-                .filter(friend => 
+                .filter(friend =>
                   friend.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                   friend.address.toLowerCase().includes(searchQuery.toLowerCase())
                 )

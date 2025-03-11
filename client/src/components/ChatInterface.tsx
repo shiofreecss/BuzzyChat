@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Trash2, Smile } from "lucide-react";
+import { Send, Trash2, Smile, ArrowLeft } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import type { Message, User } from "@shared/schema";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,13 +18,15 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+// Update the ChatInterfaceProps interface
 interface ChatInterfaceProps {
   address: string;
   selectedUser?: User;
   onSelectUser?: (user?: User) => void;
+  showBackButton?: boolean;
 }
 
-export default function ChatInterface({ address, selectedUser, onSelectUser }: ChatInterfaceProps) {
+export default function ChatInterface({ address, selectedUser, onSelectUser, showBackButton = false }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isConnected, setIsConnected] = useState(false);
@@ -190,22 +192,37 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
     });
   };
 
+  const shortenAddress = (address: string) => {
+    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  };
+
+
   return (
-    <Card className="flex-1 h-[600px] flex flex-col" style={{ backgroundColor: chatTheme.background }}>
+    <Card className="flex-1 h-[calc(100vh-8rem)] sm:h-[600px] flex flex-col" style={{ backgroundColor: chatTheme.background }}>
       <div className="p-4 border-b border-gray-800 flex justify-between items-center">
         <div className="flex items-center gap-3">
+          {showBackButton && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onSelectUser?.(undefined)}
+              className="md:hidden"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          )}
           <h2 className="text-lg font-semibold text-gray-100">
             {selectedUser
-              ? `Chat with ${selectedUser.username || selectedUser.address}`
+              ? `Chat with ${selectedUser.username || shortenAddress(selectedUser.address)}`
               : "Public Chat"
             }
           </h2>
-          {selectedUser && (
+          {selectedUser && !showBackButton && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => onSelectUser?.(undefined)}
-              className="text-xs"
+              className="text-xs hidden md:inline-flex"
               style={{ backgroundColor: chatTheme.secondary }}
             >
               Return to Public Chat

@@ -14,6 +14,7 @@ export default function Home() {
   const [address, setAddress] = useState<string>();
   const [showProfile, setShowProfile] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType>();
+  const [showChatList, setShowChatList] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -24,6 +25,13 @@ export default function Home() {
     }
   }, []);
 
+  // On mobile, when a user is selected, hide the chat list
+  useEffect(() => {
+    if (selectedUser && window.innerWidth <= 768) {
+      setShowChatList(false);
+    }
+  }, [selectedUser]);
+
   const handleConnect = async (walletAddress: string) => {
     try {
       await apiRequest('POST', '/api/users', {
@@ -32,7 +40,6 @@ export default function Home() {
         nickname: null,
       });
       setAddress(walletAddress);
-      // Save to localStorage for session persistence
       localStorage.setItem('walletAddress', walletAddress);
     } catch (error) {
       toast({
@@ -63,14 +70,19 @@ export default function Home() {
     }
   };
 
+  const handleBackToList = () => {
+    setSelectedUser(undefined);
+    setShowChatList(true);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white p-6"> {/* Consider adding a dark theme className here */}
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white p-2 sm:p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
             Buzzy.Chat
           </h1>
-          <div className="flex gap-4 items-center">
+          <div className="flex flex-wrap gap-2 sm:gap-4 items-center">
             {address && (
               <>
                 <Button
@@ -112,15 +124,23 @@ export default function Home() {
           showProfile ? (
             <UserProfile address={address} />
           ) : (
-            <div className="flex gap-6">
-              <ChatList 
-                currentAddress={address} 
-                onSelectUser={setSelectedUser}
-              />
+            <div className="flex flex-col md:flex-row gap-4">
+              {(showChatList || window.innerWidth > 768) && (
+                <ChatList 
+                  currentAddress={address} 
+                  onSelectUser={(user) => {
+                    setSelectedUser(user);
+                    if (window.innerWidth <= 768) {
+                      setShowChatList(false);
+                    }
+                  }}
+                />
+              )}
               <ChatInterface 
                 address={address}
                 selectedUser={selectedUser}
-                onSelectUser={setSelectedUser}
+                onSelectUser={handleBackToList}
+                showBackButton={!showChatList}
               />
             </div>
           )
