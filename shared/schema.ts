@@ -13,6 +13,7 @@ export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   content: text("content").notNull(),
   fromAddress: text("from_address").notNull(),
+  toAddress: text("to_address"),
   timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
@@ -30,6 +31,7 @@ export const updateUserSchema = createInsertSchema(users).pick({
 export const insertMessageSchema = createInsertSchema(messages).pick({
   content: true,
   fromAddress: true,
+  toAddress: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
