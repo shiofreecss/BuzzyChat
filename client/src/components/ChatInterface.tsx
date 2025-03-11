@@ -13,6 +13,7 @@ import { apiRequest } from "@/lib/queryClient"; // Fixed import
 interface ChatInterfaceProps {
   address: string;
   selectedUser?: User;
+  onSelectUser?: (user?: User) => void;
 }
 
 export default function ChatInterface({ address, selectedUser }: ChatInterfaceProps) {
@@ -127,12 +128,24 @@ export default function ChatInterface({ address, selectedUser }: ChatInterfacePr
   return (
     <Card className="flex-1 h-[600px] flex flex-col bg-gray-900">
       <div className="p-4 border-b border-gray-800 flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-100">
-          {selectedUser
-            ? `Chat with ${selectedUser.username || selectedUser.address}`
-            : "Public Chat"
-          }
-        </h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-semibold text-gray-100">
+            {selectedUser
+              ? `Chat with ${selectedUser.username || selectedUser.address}`
+              : "Public Chat"
+            }
+          </h2>
+          {selectedUser && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onSelectUser?.(undefined)}
+              className="text-xs bg-gray-800 hover:bg-gray-700"
+            >
+              Return to Public Chat
+            </Button>
+          )}
+        </div>
         <Button
           variant="ghost"
           size="icon"

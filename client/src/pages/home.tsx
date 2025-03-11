@@ -120,6 +120,7 @@ export default function Home() {
               <ChatInterface 
                 address={address}
                 selectedUser={selectedUser}
+                onSelectUser={setSelectedUser}
               />
             </div>
           )
