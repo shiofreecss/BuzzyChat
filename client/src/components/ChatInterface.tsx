@@ -4,12 +4,19 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Trash2 } from "lucide-react";
+import { Send, Trash2, Smile } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import type { Message, User } from "@shared/schema";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import ThemeCustomizer, { type ChatTheme } from "./ThemeCustomizer";
+import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface ChatInterfaceProps {
   address: string;
@@ -22,15 +29,16 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
   const [newMessage, setNewMessage] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const socketRef = useRef<WebSocket>();
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [chatTheme, setChatTheme] = useState<ChatTheme>({
-    primary: "#7c3aed", // Purple
-    secondary: "#1f2937", // Dark gray
-    background: "#111827", // Very dark gray
+    primary: "#7c3aed",
+    secondary: "#1f2937",
+    background: "#111827",
   });
 
   const { data: initialMessages = [] } = useQuery<Message[]>({
@@ -169,6 +177,19 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
       )
     : messages.filter(msg => msg && !msg.toAddress);
 
+  const handleEmojiSelect = (emoji: any) => {
+    setShowEmojiPicker(false);
+    setNewMessage(prev => prev + emoji.native);
+  };
+
+  const handleReaction = (messageId: number, emoji: string) => {
+    // In the future, this should send the reaction to the server
+    toast({
+      title: "Reaction Added",
+      description: `Added reaction ${emoji} to message`,
+    });
+  };
+
   return (
     <Card className="flex-1 h-[600px] flex flex-col" style={{ backgroundColor: chatTheme.background }}>
       <div className="p-4 border-b border-gray-800 flex justify-between items-center">
@@ -210,20 +231,44 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
             key={msg.id}
             message={msg}
             isOwn={msg.fromAddress === address}
+            onReact={(emoji) => handleReaction(msg.id, emoji)}
           />
         ))}
         <div ref={messagesEndRef} />
       </ScrollArea>
 
       <div className="p-4 border-t border-gray-800 flex gap-2">
-        <Input
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type a message..."
-          onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-          disabled={!isConnected}
-          className="bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400"
-        />
+        <div className="flex-1 flex gap-2">
+          <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-gray-400 hover:text-gray-300"
+              >
+                <Smile className="h-5 w-5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0 border-none">
+              <Picker
+                data={data}
+                onEmojiSelect={handleEmojiSelect}
+                theme="dark"
+                emojiSize={20}
+                emojiButtonSize={28}
+                maxFrequentRows={1}
+              />
+            </PopoverContent>
+          </Popover>
+          <Input
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Type a message..."
+            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            disabled={!isConnected}
+            className="bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400"
+          />
+        </div>
         <Button
           onClick={sendMessage}
           disabled={!isConnected}
