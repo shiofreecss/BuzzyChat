@@ -4,10 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Send } from "lucide-react";
+import { Send, Trash2 } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import type { Message, User } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient"; // Fixed import
 
 interface ChatInterfaceProps {
   address: string;
@@ -99,22 +100,47 @@ export default function ChatInterface({ address, selectedUser }: ChatInterfacePr
     setNewMessage("");
   };
 
+  const clearMessages = async () => {
+    try {
+      await apiRequest("DELETE", "/api/messages");
+      setMessages([]);
+      toast({
+        title: "Chat Cleared",
+        description: "All messages have been cleared",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to clear messages",
+      });
+    }
+  };
+
   const filteredMessages = selectedUser
-    ? messages.filter(msg => 
+    ? messages.filter(msg =>
         (msg.fromAddress === address && msg.toAddress === selectedUser.address) ||
         (msg.fromAddress === selectedUser.address && msg.toAddress === address)
       )
     : messages.filter(msg => !msg.toAddress);
 
   return (
-    <Card className="flex-1 h-[600px] flex flex-col">
-      <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold">
-          {selectedUser 
+    <Card className="flex-1 h-[600px] flex flex-col bg-gray-900">
+      <div className="p-4 border-b border-gray-800 flex justify-between items-center">
+        <h2 className="text-lg font-semibold text-gray-100">
+          {selectedUser
             ? `Chat with ${selectedUser.username || selectedUser.address}`
             : "Public Chat"
           }
         </h2>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={clearMessages}
+          className="text-gray-400 hover:text-red-400"
+        >
+          <Trash2 className="h-5 w-5" />
+        </Button>
       </div>
       <ScrollArea ref={scrollRef} className="flex-1 p-4">
         {filteredMessages.map((msg) => (
@@ -125,18 +151,19 @@ export default function ChatInterface({ address, selectedUser }: ChatInterfacePr
           />
         ))}
       </ScrollArea>
-      <div className="p-4 border-t flex gap-2">
+      <div className="p-4 border-t border-gray-800 flex gap-2">
         <Input
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Type a message..."
           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
           disabled={!isConnected}
+          className="bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400"
         />
         <Button
           onClick={sendMessage}
           disabled={!isConnected}
-          className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+          className="bg-purple-600 hover:bg-purple-700 text-white"
         >
           <Send className="h-4 w-4" />
         </Button>

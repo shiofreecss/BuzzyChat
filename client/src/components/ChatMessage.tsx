@@ -12,9 +12,11 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4`}>
       <Card className={`max-w-[80%] p-3 ${
-        isOwn ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white' : 'bg-gray-100'
+        isOwn 
+          ? 'bg-purple-600 text-white' 
+          : 'bg-gray-800 text-gray-100'
       }`}>
-        <div className="text-sm font-medium mb-1">
+        <div className="text-sm font-medium mb-1 opacity-90">
           {shortenAddress(message.fromAddress)}
         </div>
         <div className="break-words">{message.content}</div>

@@ -64,7 +64,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white p-6">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white p-6"> {/* Consider adding a dark theme className here */}
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">

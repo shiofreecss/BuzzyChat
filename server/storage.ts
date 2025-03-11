@@ -10,6 +10,7 @@ export interface IStorage {
   getMessages(): Promise<Message[]>;
   getUserByUsername(username: string): Promise<User | undefined>;
   addMessage(message: InsertMessage): Promise<Message>;
+  clearMessages(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -62,6 +63,10 @@ export class DatabaseStorage implements IStorage {
       .values(insertMessage)
       .returning();
     return message;
+  }
+
+  async clearMessages(): Promise<void> {
+    await db.delete(messages);
   }
 }
 
