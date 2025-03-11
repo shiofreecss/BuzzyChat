@@ -47,6 +47,7 @@ export async function disconnectWallet(): Promise<void> {
   localStorage.removeItem('walletAddress');
 }
 
-export function shortenAddress(address: string): string {
+export function shortenAddress(address: string | undefined | null): string {
+  if (!address) return 'Unknown';
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }

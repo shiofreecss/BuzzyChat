@@ -147,10 +147,12 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
 
   const filteredMessages = selectedUser
     ? messages.filter(msg =>
-        (msg.fromAddress === address && msg.toAddress === selectedUser.address) ||
-        (msg.fromAddress === selectedUser.address && msg.toAddress === address)
+        msg && msg.fromAddress && msg.toAddress && (
+          (msg.fromAddress === address && msg.toAddress === selectedUser.address) ||
+          (msg.fromAddress === selectedUser.address && msg.toAddress === address)
+        )
       )
-    : messages.filter(msg => !msg.toAddress);
+    : messages.filter(msg => msg && !msg.toAddress);
 
   return (
     <Card className="flex-1 h-[600px] flex flex-col bg-gray-900">

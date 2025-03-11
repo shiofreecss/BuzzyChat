@@ -9,6 +9,8 @@ interface ChatMessageProps {
 }
 
 export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
+  if (!message) return null;
+
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4`}>
       <Card className={`max-w-[80%] p-3 ${
@@ -21,7 +23,7 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
         </div>
         <div className="break-words">{message.content}</div>
         <div className="text-xs mt-1 opacity-70">
-          {format(message.timestamp, 'HH:mm')}
+          {format(new Date(message.timestamp), 'HH:mm')}
         </div>
       </Card>
     </div>
