@@ -106,6 +106,20 @@ export default function UserProfile({ address }: UserProfileProps) {
           <div className="space-y-4">
             <div>
               <Label>Username</Label>
+              <p className="text-lg font-medium">
+                {user?.username || "Not set"}
+              </p>
+            </div>
+            <div>
+              <Label>Nickname</Label>
+              <p className="text-lg font-medium">
+                {user?.nickname || "Not set"}
+              </p>
+            </div>
+            <div>
+              <Label>Wallet Address</Label>
+              <p className="text-sm font-mono break-all">{address}</p>
+            </div>
               <p className="text-lg">{user?.username || "Not set"}</p>
             </div>
             <div>
