@@ -1,3 +1,9 @@
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
+
 import { ethers } from "ethers";
 
 export async function connectWallet(): Promise<string> {

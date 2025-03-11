@@ -20,14 +20,12 @@ export default function ChatInterface({ address }: ChatInterfaceProps) {
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const { data: initialMessages } = useQuery({
+  const { data: initialMessages = [] } = useQuery<Message[]>({
     queryKey: ['/api/messages'],
   });
 
   useEffect(() => {
-    if (initialMessages) {
-      setMessages(initialMessages);
-    }
+    setMessages(initialMessages);
   }, [initialMessages]);
 
   useEffect(() => {
@@ -36,7 +34,7 @@ export default function ChatInterface({ address }: ChatInterfaceProps) {
     socketRef.current = new WebSocket(wsUrl);
 
     socketRef.current.onmessage = (event) => {
-      const message = JSON.parse(event.data);
+      const message = JSON.parse(event.data) as Message;
       setMessages(prev => [...prev, message]);
     };
 
