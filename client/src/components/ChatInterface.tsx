@@ -9,6 +9,7 @@ import ChatMessage from "./ChatMessage";
 import type { Message, User } from "@shared/schema";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import ThemeCustomizer, { type ChatTheme } from "./ThemeCustomizer";
 
 interface ChatInterfaceProps {
   address: string;
@@ -26,6 +27,11 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [chatTheme, setChatTheme] = useState<ChatTheme>({
+    primary: "#7c3aed", // Purple
+    secondary: "#1f2937", // Dark gray
+    background: "#111827", // Very dark gray
+  });
 
   const { data: initialMessages = [] } = useQuery<Message[]>({
     queryKey: ['/api/messages'],
@@ -164,7 +170,7 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
     : messages.filter(msg => msg && !msg.toAddress);
 
   return (
-    <Card className="flex-1 h-[600px] flex flex-col bg-gray-900">
+    <Card className="flex-1 h-[600px] flex flex-col" style={{ backgroundColor: chatTheme.background }}>
       <div className="p-4 border-b border-gray-800 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <h2 className="text-lg font-semibold text-gray-100">
@@ -178,20 +184,24 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
               variant="outline"
               size="sm"
               onClick={() => onSelectUser?.(undefined)}
-              className="text-xs bg-gray-800 hover:bg-gray-700"
+              className="text-xs"
+              style={{ backgroundColor: chatTheme.secondary }}
             >
               Return to Public Chat
             </Button>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={clearMessages}
-          className="text-gray-400 hover:text-red-400"
-        >
-          <Trash2 className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <ThemeCustomizer onThemeChange={setChatTheme} currentTheme={chatTheme} />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={clearMessages}
+            className="text-gray-400 hover:text-red-400"
+          >
+            <Trash2 className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       <ScrollArea className="flex-1 p-4">
