@@ -1,6 +1,6 @@
 import { users, messages, friends, type User, type InsertUser, type Message, type InsertMessage, type UpdateUser, type Friend, type InsertFriendRequest } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, lt, in as inOp } from "drizzle-orm";
+import { eq, and, or, lt } from "drizzle-orm";
 import { subDays } from "date-fns";
 
 export interface IStorage {
@@ -109,7 +109,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async acceptFriendRequest(requestId: number): Promise<Friend> {
-    console.log('Accepting friend request in storage:', requestId);
     const [friend] = await db
       .update(friends)
       .set({ status: 'accepted' })
@@ -120,7 +119,6 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Friend request not found");
     }
 
-    console.log('Friend request updated in database:', friend);
     return friend;
   }
 
@@ -137,50 +135,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFriends(address: string): Promise<User[]> {
-    try {
-      // Get all friendships where this user is involved and status is accepted
-      const friendships = await db
-        .select()
-        .from(friends)
-        .where(
-          and(
-            or(
-              eq(friends.requestorAddress, address),
-              eq(friends.recipientAddress, address)
-            ),
-            eq(friends.status, 'accepted')
-          )
-        );
-
-      // If no friendships, return empty array
-      if (!friendships || friendships.length === 0) {
-        return [];
-      }
-
-      // Extract the addresses of friends
-      const friendAddresses = friendships.map(friendship =>
-        friendship.requestorAddress === address
-          ? friendship.recipientAddress
-          : friendship.requestorAddress
+    const acceptedFriends = await db
+      .select()
+      .from(friends)
+      .where(
+        and(
+          or(
+            eq(friends.requestorAddress, address),
+            eq(friends.recipientAddress, address)
+          ),
+          eq(friends.status, 'accepted')
+        )
       );
 
-      // Get the user objects for these addresses if there are any friend addresses
-      if (friendAddresses.length === 0) {
-        return [];
-      }
+    const friendAddresses = acceptedFriends.map(f =>
+      f.requestorAddress === address ? f.recipientAddress : f.requestorAddress
+    );
 
-      const friendUsers = await db
-        .select()
-        .from(users)
-        .where(
-          inOp(users.address, friendAddresses)
-        );
-
-      return Array.isArray(friendUsers) ? friendUsers : [];
-    } catch (error) {
-      console.error('Error in getFriends:', error);
-      return [];
-    }
+    return await db
+      .select()
+      .from(users)
+      .where(users.address.in(friendAddresses));
   }
 
   async checkFriendship(address1: string, address2: string): Promise<boolean> {
