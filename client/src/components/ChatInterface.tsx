@@ -23,16 +23,26 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
   const [isReconnecting, setIsReconnecting] = useState(false);
   const socketRef = useRef<WebSocket>();
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: initialMessages = [] } = useQuery<Message[]>({
     queryKey: ['/api/messages'],
   });
 
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   useEffect(() => {
     setMessages(initialMessages);
   }, [initialMessages]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]); // Scroll whenever messages change
 
   const connectWebSocket = () => {
     if (socketRef.current?.readyState === WebSocket.OPEN) return;
@@ -84,13 +94,12 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
       console.log("WebSocket connection closed");
       setIsConnected(false);
 
-      // Only attempt to reconnect if we're not already in the process
       if (!isReconnecting) {
         setIsReconnecting(true);
         reconnectTimeoutRef.current = setTimeout(() => {
           console.log("Attempting to reconnect...");
           connectWebSocket();
-        }, 5000); // Try to reconnect after 5 seconds
+        }, 5000);
       }
     };
   };
@@ -107,12 +116,6 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
       }
     };
   }, []);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
 
   const sendMessage = () => {
     if (!newMessage.trim() || !socketRef.current || !isConnected) return;
@@ -184,7 +187,7 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
           <Trash2 className="h-5 w-5" />
         </Button>
       </div>
-      <ScrollArea ref={scrollRef} className="flex-1 p-4">
+      <ScrollArea className="flex-1 p-4">
         {filteredMessages.map((msg) => (
           <ChatMessage
             key={msg.id}
@@ -192,6 +195,7 @@ export default function ChatInterface({ address, selectedUser, onSelectUser }: C
             isOwn={msg.fromAddress === address}
           />
         ))}
+        <div ref={messagesEndRef} /> {/* Scroll anchor */}
       </ScrollArea>
       <div className="p-4 border-t border-gray-800 flex gap-2">
         <Input
