@@ -20,16 +20,21 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
   const [viewMode, setViewMode] = useState<"all" | "friends">("friends");
   const { toast } = useToast();
 
-  const { data: users = [] } = useQuery<User[]>({
-    queryKey: ['/api/users'],
+  const { data: users = [], refetch: refetchUsers } = useQuery<User[]>({
+    queryKey: ['users'],
+    queryFn: () => apiRequest('GET', '/api/users'),
   });
 
-  const { data: friends = [] } = useQuery<User[]>({
-    queryKey: ['/api/friends', currentAddress],
+  const { data: friends = [], refetch: refetchFriends } = useQuery<User[]>({
+    queryKey: ['friends', currentAddress],
+    queryFn: () => apiRequest('GET', `/api/friends/${currentAddress}`),
+    enabled: !!currentAddress,
   });
 
-  const { data: friendRequests = [] } = useQuery<Friend[]>({
-    queryKey: [`/api/friends/requests/${currentAddress}`],
+  const { data: friendRequests = [], refetch: refetchFriendRequests } = useQuery<Friend[]>({
+    queryKey: ['friendRequests', currentAddress],
+    queryFn: () => apiRequest('GET', `/api/friends/requests/${currentAddress}`),
+    enabled: !!currentAddress,
   });
 
   const sendFriendRequest = async (recipientAddress: string) => {
@@ -39,9 +44,11 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
         recipientAddress,
         status: 'pending'
       });
+      // Refetch users list to update the UI
+      refetchUsers();
       toast({
         title: "Friend Request Sent",
-        description: "Your friend request has been sent successfully",
+        description: "Friend request has been sent successfully",
       });
     } catch (error) {
       toast({
@@ -55,6 +62,8 @@ export default function ChatList({ currentAddress, onSelectUser }: ChatListProps
   const acceptFriendRequest = async (requestId: number) => {
     try {
       await apiRequest('POST', `/api/friends/accept/${requestId}`);
+      refetchFriends(); // Refetch friends list after accepting
+      refetchFriendRequests(); // Refetch friend requests list after accepting
       toast({
         title: "Friend Request Accepted",
         description: "You are now friends with this user",
