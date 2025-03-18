@@ -6,6 +6,7 @@ import UserProfile from "@/components/UserProfile";
 import ChatList from "@/components/ChatList";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import ThemeToggle from "@/components/ThemeToggle";
 import type { User as UserType } from "@shared/schema";
 
 export default function Home() {
@@ -16,7 +17,6 @@ export default function Home() {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    // Restore session from localStorage
     const savedAddress = localStorage.getItem('walletAddress');
     if (savedAddress) {
       setAddress(savedAddress);
@@ -84,13 +84,16 @@ export default function Home() {
           <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
             Buzzy.Chat
           </h1>
-          <WalletConnect
-            onConnect={handleConnect}
-            onProfileClick={() => setShowProfile(true)}
-            onLogout={handleLogout}
-            connected={!!address}
-            address={address}
-          />
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <WalletConnect
+              onConnect={handleConnect}
+              onProfileClick={() => setShowProfile(true)}
+              onLogout={handleLogout}
+              connected={!!address}
+              address={address}
+            />
+          </div>
         </div>
 
         {address ? (
@@ -121,12 +124,28 @@ export default function Home() {
             </div>
           )
         ) : (
-          <div className="text-center py-20">
-            <h2 className="text-2xl font-semibold mb-4">
+          <div className="text-center py-20 space-y-6">
+            <h2 className="text-3xl font-semibold mb-4 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
               Welcome to Buzzy.Chat
             </h2>
-            <p className="text-gray-400">
-              Connect your wallet to start chatting in this decentralized space
+            <div className="max-w-2xl mx-auto space-y-4 text-gray-300">
+              <p className="text-lg">
+                A decentralized social chat platform powered by blockchain technology,
+                offering secure and seamless communication in the Web3 era.
+              </p>
+              <ul className="text-left space-y-2 mx-auto max-w-md">
+                <li>🔒 Secure wallet-based authentication</li>
+                <li>💬 Real-time messaging with friends</li>
+                <li>🌐 Public chat channels</li>
+                <li>🤝 Friend request system</li>
+                <li>🎨 Beautiful, responsive design</li>
+              </ul>
+              <p className="text-sm mt-8 text-gray-400">
+                Connect your wallet to start chatting in this decentralized space
+              </p>
+            </div>
+            <p className="text-sm text-gray-500 mt-12">
+              Powered By Beaver Foundation
             </p>
           </div>
         )}
