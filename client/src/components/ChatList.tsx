@@ -100,14 +100,14 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
   );
 
   return (
-    <Card className="w-full md:w-80 h-[calc(100vh-8rem)] sm:h-[600px] flex flex-col bg-gray-900">
-      <div className="p-4 border-b border-gray-800">
+    <Card className="w-full md:w-80 h-[calc(100vh-8rem)] sm:h-[600px] flex flex-col bg-card">
+      <div className="p-4 border-b">
         <div className="flex justify-between mb-3">
           <Button
             variant={viewMode === "friends" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("friends")}
-            className="w-1/2 bg-purple-600 hover:bg-purple-700"
+            className={`w-1/2 ${viewMode === "friends" ? 'bg-primary text-primary-foreground' : ''}`}
           >
             Friends ({friends.length})
           </Button>
@@ -115,7 +115,7 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
             variant={viewMode === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("all")}
-            className="w-1/2"
+            className={`w-1/2 ${viewMode === "all" ? 'bg-primary text-primary-foreground' : ''}`}
           >
             All Users
           </Button>
@@ -126,14 +126,14 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
             placeholder={viewMode === "friends" ? "Search friends..." : "Search users..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 bg-gray-800 border-gray-700"
+            className="pl-8"
           />
         </div>
       </div>
 
       <Button
         variant="ghost"
-        className={`m-4 flex items-center gap-2 ${!selectedUser ? 'bg-purple-600 text-white hover:bg-purple-700' : ''}`}
+        className={`m-4 flex items-center gap-2 ${!selectedUser ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-accent'}`}
         onClick={onPublicChat}
       >
         <Users className="h-4 w-4" />
@@ -141,15 +141,15 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
       </Button>
 
       {friendRequests.length > 0 && (
-        <div className="p-4 border-b border-gray-800 bg-gray-800/50">
-          <h3 className="text-sm font-medium mb-2 text-gray-200">Friend Requests ({friendRequests.length})</h3>
+        <div className="p-4 border-b bg-accent/50">
+          <h3 className="text-sm font-medium mb-2">Friend Requests ({friendRequests.length})</h3>
           {friendRequests.map((request) => (
             <div key={request.id} className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-300">{shortenAddress(request.requestorAddress)}</span>
+              <span className="text-sm">{shortenAddress(request.requestorAddress)}</span>
               <Button
                 size="sm"
                 onClick={() => acceptFriendRequest(request.id)}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 <UserCheck className="h-4 w-4" />
               </Button>
@@ -159,10 +159,10 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
       )}
 
       <ScrollArea className="flex-1">
-        {viewMode === "friends" ? (
-          <div className="p-4 space-y-2">
-            {friends.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
+        <div className="p-4 space-y-2">
+          {viewMode === "friends" ? (
+            friends.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
                 <p>No friends yet</p>
                 <p className="text-xs mt-2">Switch to "All Users" to add friends</p>
               </div>
@@ -176,7 +176,11 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
                   <div key={friend.id} className="flex items-center justify-between">
                     <Button
                       variant="ghost"
-                      className={`flex-1 justify-start gap-2 ${selectedUser?.id === friend.id ? 'bg-purple-600 text-white hover:bg-purple-700' : ''}`}
+                      className={`flex-1 justify-start gap-2 ${
+                        selectedUser?.id === friend.id 
+                          ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                          : 'hover:bg-accent'
+                      }`}
                       onClick={() => onSelectUser(friend)}
                     >
                       <MessageSquare className="h-4 w-4" />
@@ -185,7 +189,7 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
                           {friend.username || shortenAddress(friend.address)}
                         </div>
                         {friend.username && (
-                          <div className="text-xs text-gray-400">
+                          <div className="text-xs text-muted-foreground">
                             {shortenAddress(friend.address)}
                           </div>
                         )}
@@ -193,15 +197,17 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
                     </Button>
                   </div>
                 ))
-            )}
-          </div>
-        ) : (
-          <div className="p-4 space-y-2">
-            {filteredUsers.map((user) => (
+            )
+          ) : (
+            filteredUsers.map((user) => (
               <div key={user.id} className="flex items-center justify-between">
                 <Button
                   variant="ghost"
-                  className={`flex-1 justify-start gap-2 ${selectedUser?.id === user.id ? 'bg-purple-600 text-white hover:bg-purple-700' : ''}`}
+                  className={`flex-1 justify-start gap-2 ${
+                    selectedUser?.id === user.id 
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                      : 'hover:bg-accent'
+                  }`}
                   onClick={() => isFriend(user.address) && onSelectUser(user)}
                   disabled={!isFriend(user.address)}
                 >
@@ -211,7 +217,7 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
                       {user.username || shortenAddress(user.address)}
                     </div>
                     {user.username && (
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-muted-foreground">
                         {shortenAddress(user.address)}
                       </div>
                     )}
@@ -222,15 +228,15 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
                     variant="ghost"
                     size="icon"
                     onClick={() => sendFriendRequest(user.address)}
-                    className="ml-2 text-purple-400 hover:text-purple-300"
+                    className="ml-2 text-primary hover:text-primary/90"
                   >
                     <UserPlus className="h-4 w-4" />
                   </Button>
                 )}
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </ScrollArea>
     </Card>
   );

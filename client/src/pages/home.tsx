@@ -78,10 +78,10 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white p-2 sm:p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-6xl mx-auto p-4 sm:p-6">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary/80 to-primary bg-clip-text text-transparent">
             Buzzy.Chat
           </h1>
           <div className="flex items-center gap-4">
@@ -124,29 +124,46 @@ export default function Home() {
             </div>
           )
         ) : (
-          <div className="text-center py-20 space-y-6">
-            <h2 className="text-3xl font-semibold mb-4 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+          <div className="text-center py-20 space-y-8">
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-primary/80 to-primary bg-clip-text text-transparent">
               Welcome to Buzzy.Chat
             </h2>
-            <div className="max-w-2xl mx-auto space-y-4 text-gray-300">
-              <p className="text-lg">
+            <div className="max-w-2xl mx-auto space-y-6">
+              <p className="text-xl text-foreground/80">
                 A decentralized social chat platform powered by blockchain technology,
                 offering secure and seamless communication in the Web3 era.
               </p>
-              <ul className="text-left space-y-2 mx-auto max-w-md">
-                <li>🔒 Secure wallet-based authentication</li>
-                <li>💬 Real-time messaging with friends</li>
-                <li>🌐 Public chat channels</li>
-                <li>🤝 Friend request system</li>
-                <li>🎨 Beautiful, responsive design</li>
-              </ul>
-              <p className="text-sm mt-8 text-gray-400">
+              <div className="bg-card rounded-lg p-6 shadow-lg max-w-md mx-auto">
+                <ul className="text-left space-y-4">
+                  <li className="flex items-center gap-2 text-foreground">
+                    <span className="text-xl">🔒</span>
+                    <span>Secure wallet-based authentication</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-foreground">
+                    <span className="text-xl">💬</span>
+                    <span>Real-time messaging with friends</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-foreground">
+                    <span className="text-xl">🌐</span>
+                    <span>Public chat channels</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-foreground">
+                    <span className="text-xl">🤝</span>
+                    <span>Friend request system</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-foreground">
+                    <span className="text-xl">🎨</span>
+                    <span>Beautiful, responsive design</span>
+                  </li>
+                </ul>
+              </div>
+              <p className="text-lg text-muted-foreground mt-8">
                 Connect your wallet to start chatting in this decentralized space
               </p>
             </div>
-            <p className="text-sm text-gray-500 mt-12">
+            <div className="text-sm text-muted-foreground bg-card/50 py-4 px-6 rounded-full inline-block mt-12">
               Powered By Beaver Foundation
-            </p>
+            </div>
           </div>
         )}
       </div>
