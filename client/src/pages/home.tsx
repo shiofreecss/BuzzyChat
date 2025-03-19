@@ -120,7 +120,7 @@ export default function Home() {
   };
 
   const onPublicChat = () => {
-    handleSelectUser(null);
+    setSelectedUser(undefined);
     if (isMobile) {
       setPage([1, 1]); // Animate forward to chat
       setLocation('/chat');
@@ -181,7 +181,7 @@ export default function Home() {
                       />
                     </motion.div>
                   )}
-                  {(selectedUser !== undefined || !isMobile) && (
+                  {(selectedUser !== undefined || !isMobile || window.location.pathname === '/chat') && (
                     <motion.div
                       key="chatinterface"
                       custom={direction}
