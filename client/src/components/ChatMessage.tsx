@@ -69,7 +69,7 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
           ? 'bg-[#2bbd2b]/20 border-[#2bbd2b]/30 shadow-lg shadow-[#2bbd2b]/10' 
           : 'bg-[#2bbd2b]/10 border-[#2bbd2b]/20'
       }`}>
-        <div className="text-sm font-['Press_Start_2P'] mb-1 text-[#2bbd2b]">
+        <div className="text-sm font-mono mb-1 text-[#2bbd2b]">
           {shortenAddress(message.fromAddress)}
         </div>
         <div className="break-words text-[#2bbd2b]">{message.content}</div>
@@ -123,5 +123,4 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
       </Card>
     </div>
   );
-
 }
