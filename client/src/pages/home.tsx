@@ -40,7 +40,7 @@ export default function Home() {
   const [showProfile, setShowProfile] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType>();
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [isMobile, setIsMobile] = useState(false);
   const [[page, direction], setPage] = useState([0, 0]);
 
@@ -114,11 +114,10 @@ export default function Home() {
     }
   };
 
-  // In the public chat button click handler in the ChatList component
   const handlePublicChat = () => {
     setSelectedUser(undefined);
     if (isMobile) {
-      setPage([1, 1]); // Animate forward
+      setPage([1, 1]); // Animate forward to show chat interface
       setLocation('/chat');
     }
   };
@@ -127,6 +126,9 @@ export default function Home() {
     setShowProfile(false);
     setPage([0, -1]); // Animate backward
   };
+
+  const showChatInterface = !isMobile || (isMobile && location === '/chat');
+  const showChatList = !isMobile || (isMobile && location === '/');
 
   return (
     <div className="min-h-screen bg-black text-[#2bbd2b] flex flex-col">
@@ -162,32 +164,32 @@ export default function Home() {
             ) : (
               <div className="flex flex-col md:flex-row gap-4">
                 <AnimatePresence mode="wait" custom={direction}>
-                  {(!selectedUser || !isMobile) && (
+                  {showChatList && (
                     <motion.div
                       key="chatlist"
                       custom={direction}
                       variants={pageVariants}
                       initial={isMobile ? "enter" : "center"}
                       animate="center"
-                      exit={isMobile ? "exit" : false}
+                      exit="exit"
                       transition={pageTransition}
                     >
                       <ChatList 
                         currentAddress={address} 
                         onSelectUser={handleSelectUser}
-                        onPublicChat={handlePublicChat} // Use the new handler
+                        onPublicChat={handlePublicChat}
                         selectedUser={selectedUser}
                       />
                     </motion.div>
                   )}
-                  {(selectedUser !== undefined || !isMobile) && (
+                  {showChatInterface && (
                     <motion.div
                       key="chatinterface"
                       custom={direction}
                       variants={pageVariants}
                       initial={isMobile ? "enter" : "center"}
                       animate="center"
-                      exit={isMobile ? "exit" : false}
+                      exit="exit"
                       transition={pageTransition}
                       className="flex-1"
                     >
@@ -195,8 +197,8 @@ export default function Home() {
                         address={address}
                         selectedUser={selectedUser}
                         onSelectUser={handleBackToList}
-                        showBackButton={!!selectedUser && isMobile}
-                        isPublicChat={selectedUser === undefined} // Changed condition
+                        showBackButton={isMobile}
+                        isPublicChat={selectedUser === undefined}
                       />
                     </motion.div>
                   )}
