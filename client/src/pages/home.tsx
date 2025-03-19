@@ -120,7 +120,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-[#00ff00] flex flex-col">
+    <div className="min-h-screen bg-black text-[#2bbd2b] flex flex-col">
       <Header
         onConnect={handleConnect}
         onProfileClick={() => {
@@ -132,7 +132,7 @@ export default function Home() {
         address={address}
       />
 
-      <main className="flex-1 container max-w-6xl mx-auto p-4 sm:p-6">
+      <main className="flex-1 container max-w-6xl mx-auto px-4 py-6 flex flex-col">
         {address ? (
           <AnimatePresence mode="wait" custom={direction}>
             {showProfile ? (
@@ -151,7 +151,7 @@ export default function Home() {
                 />
               </motion.div>
             ) : (
-              <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 flex flex-col md:flex-row gap-6 min-h-[calc(100vh-12rem)]">
                 <AnimatePresence mode="wait" custom={direction}>
                   {(!selectedUser || !isMobile) && (
                     <motion.div
@@ -197,38 +197,38 @@ export default function Home() {
           </AnimatePresence>
         ) : (
           <div className="text-center py-20 space-y-8">
-            <h2 className="text-4xl font-['Press_Start_2P'] text-[#00ff00] [text-shadow:_0_0_30px_rgb(0_255_0_/_20%)]">
+            <h2 className="text-4xl font-['Press_Start_2P'] text-[#2bbd2b] [text-shadow:_0_0_30px_rgb(0_255_0_/_20%)]">
               Welcome to Buzzy.Chat
             </h2>
             <div className="max-w-2xl mx-auto space-y-6">
-              <p className="text-xl font-['Press_Start_2P'] text-[#00ff00]/80">
+              <p className="text-xl font-['Press_Start_2P'] text-[#2bbd2b]/80">
                 A decentralized social chat platform powered by blockchain technology
               </p>
-              <div className="bg-[#00ff00]/5 backdrop-blur-sm rounded-lg p-6 shadow-lg max-w-md mx-auto border border-[#00ff00]/20">
+              <div className="bg-[#2bbd2b]/5 backdrop-blur-sm rounded-lg p-6 shadow-lg max-w-md mx-auto border border-[#2bbd2b]/20">
                 <ul className="text-left space-y-4">
-                  <li className="flex items-center gap-2 text-[#00ff00]">
+                  <li className="flex items-center gap-2 text-[#2bbd2b]">
                     <span className="text-xl">🔒</span>
                     <span className="font-['Press_Start_2P'] text-xs">Secure wallet-based auth</span>
                   </li>
-                  <li className="flex items-center gap-2 text-[#00ff00]">
+                  <li className="flex items-center gap-2 text-[#2bbd2b]">
                     <span className="text-xl">💬</span>
                     <span className="font-['Press_Start_2P'] text-xs">Real-time messaging</span>
                   </li>
-                  <li className="flex items-center gap-2 text-[#00ff00]">
+                  <li className="flex items-center gap-2 text-[#2bbd2b]">
                     <span className="text-xl">🌐</span>
                     <span className="font-['Press_Start_2P'] text-xs">Public chat channels</span>
                   </li>
-                  <li className="flex items-center gap-2 text-[#00ff00]">
+                  <li className="flex items-center gap-2 text-[#2bbd2b]">
                     <span className="text-xl">🤝</span>
                     <span className="font-['Press_Start_2P'] text-xs">Friend request system</span>
                   </li>
-                  <li className="flex items-center gap-2 text-[#00ff00]">
+                  <li className="flex items-center gap-2 text-[#2bbd2b]">
                     <span className="text-xl">🎨</span>
                     <span className="font-['Press_Start_2P'] text-xs">Retro gaming design</span>
                   </li>
                 </ul>
               </div>
-              <div className="inline-flex items-center gap-2 px-6 py-3 bg-[#00ff00]/10 rounded-full border border-[#00ff00]/20 text-[#00ff00] font-['Press_Start_2P'] text-xs">
+              <div className="inline-flex items-center gap-2 px-6 py-3 bg-[#2bbd2b]/10 rounded-full border border-[#2bbd2b]/20 text-[#2bbd2b] font-['Press_Start_2P'] text-xs">
                 Connect wallet to start chatting
               </div>
             </div>
