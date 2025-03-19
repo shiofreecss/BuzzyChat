@@ -98,7 +98,7 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
             variant={viewMode === "friends" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("friends")}
-            className={`w-1/2 retro-button ${viewMode === "friends" ? 'bg-[#00ff00] text-black' : ''}`}
+            className={`w-1/2 retro-button text-xs ${viewMode === "friends" ? 'bg-[#00ff00] text-black' : ''}`}
           >
             Friends ({friends.length})
           </Button>
@@ -106,7 +106,7 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
             variant={viewMode === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("all")}
-            className={`w-1/2 retro-button ${viewMode === "all" ? 'bg-[#00ff00] text-black' : ''}`}
+            className={`w-1/2 retro-button text-xs ${viewMode === "all" ? 'bg-[#00ff00] text-black' : ''}`}
           >
             All Users
           </Button>
@@ -117,14 +117,14 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
             placeholder={viewMode === "friends" ? "Search friends..." : "Search users..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 retro-input"
+            className="pl-8 retro-input text-xs h-8"
           />
         </div>
       </div>
 
       <Button
         variant="ghost"
-        className={`m-4 flex items-center gap-2 retro-button ${!selectedUser ? 'bg-[#00ff00] text-black' : ''}`}
+        className={`m-4 flex items-center gap-2 retro-button text-xs ${!selectedUser ? 'bg-[#00ff00] text-black' : ''}`}
         onClick={onPublicChat}
       >
         <Users className="h-4 w-4" />
@@ -133,18 +133,18 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
 
       {friendRequests.length > 0 && (
         <div className="p-4 border-b border-[#00ff00]/30 bg-[#00ff00]/5">
-          <h3 className="text-sm font-['Press_Start_2P'] mb-2 text-[#00ff00]">
+          <h3 className="text-xs font-['Press_Start_2P'] mb-2 text-[#00ff00]">
             Friend Requests ({friendRequests.length})
           </h3>
           {friendRequests.map((request) => (
             <div key={request.id} className="flex items-center justify-between mb-2">
-              <span className="text-sm font-mono text-[#00ff00]/80">
+              <span className="text-xs font-mono text-[#00ff00]/80">
                 {shortenAddress(request.requestorAddress)}
               </span>
               <Button
                 size="sm"
                 onClick={() => acceptFriendRequest(request.id)}
-                className="retro-button"
+                className="retro-button text-xs h-7"
               >
                 <UserCheck className="h-4 w-4" />
               </Button>
@@ -157,7 +157,7 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
         <div className="p-4 space-y-2">
           {viewMode === "friends" ? (
             friends.length === 0 ? (
-              <div className="text-center py-8 text-[#00ff00]/70 font-['Press_Start_2P'] text-sm">
+              <div className="text-center py-8 text-[#00ff00]/70 font-['Press_Start_2P'] text-xs">
                 <p>No friends yet</p>
                 <p className="text-xs mt-2">Switch to "All Users" to add friends</p>
               </div>
@@ -171,7 +171,7 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
                   <div key={friend.id} className="flex items-center justify-between">
                     <Button
                       variant="ghost"
-                      className={`flex-1 justify-start gap-2 retro-button ${
+                      className={`flex-1 justify-start gap-2 retro-button text-xs ${
                         selectedUser?.id === friend.id ? 'bg-[#00ff00] text-black' : ''
                       }`}
                       onClick={() => onSelectUser(friend)}
@@ -182,7 +182,7 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
                           {friend.username || shortenAddress(friend.address)}
                         </div>
                         {friend.username && (
-                          <div className="text-xs font-mono opacity-70">
+                          <div className="text-[10px] font-mono opacity-70">
                             {shortenAddress(friend.address)}
                           </div>
                         )}
@@ -196,7 +196,7 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
               <div key={user.id} className="flex items-center justify-between">
                 <Button
                   variant="ghost"
-                  className={`flex-1 justify-start gap-2 retro-button ${
+                  className={`flex-1 justify-start gap-2 retro-button text-xs ${
                     selectedUser?.id === user.id ? 'bg-[#00ff00] text-black' : ''
                   }`}
                   onClick={() => isFriend(user.address) && onSelectUser(user)}
@@ -208,7 +208,7 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
                       {user.username || shortenAddress(user.address)}
                     </div>
                     {user.username && (
-                      <div className="text-xs font-mono opacity-70">
+                      <div className="text-[10px] font-mono opacity-70">
                         {shortenAddress(user.address)}
                       </div>
                     )}
@@ -219,7 +219,7 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
                     variant="ghost"
                     size="icon"
                     onClick={() => sendFriendRequest(user.address)}
-                    className="ml-2 retro-button"
+                    className="ml-2 retro-button h-7 w-7"
                   >
                     <UserPlus className="h-4 w-4" />
                   </Button>

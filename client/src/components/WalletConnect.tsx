@@ -55,20 +55,20 @@ export default function WalletConnect({
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button className="bg-gradient-to-r from-purple-500 to-blue-500">
+          <Button className="retro-button">
             <Wallet className="mr-2 h-4 w-4" />
             {shortenAddress(address!)}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={onProfileClick} className="cursor-pointer">
+        <DropdownMenuContent align="end" className="w-48 bg-black border border-[#00ff00] shadow-lg shadow-[#00ff00]/20">
+          <DropdownMenuItem onClick={onProfileClick} className="cursor-pointer text-[#00ff00] hover:bg-[#00ff00]/10 font-['Press_Start_2P'] text-xs">
             <Settings className="mr-2 h-4 w-4" />
             Profile Settings
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
+          <DropdownMenuSeparator className="bg-[#00ff00]/20" />
           <DropdownMenuItem 
             onClick={onLogout}
-            className="cursor-pointer text-red-500 focus:text-red-500"
+            className="cursor-pointer text-red-500 hover:bg-red-500/10 font-['Press_Start_2P'] text-xs"
           >
             <LogOut className="mr-2 h-4 w-4" />
             Logout
@@ -83,26 +83,26 @@ export default function WalletConnect({
       <DropdownMenuTrigger asChild>
         <Button 
           disabled={connecting}
-          className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+          className="retro-button"
         >
           <Wallet className="mr-2 h-4 w-4" />
           {connecting ? "Connecting..." : "Connect Wallet"}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56">
+      <DropdownMenuContent className="w-56 bg-black border border-[#00ff00] shadow-lg shadow-[#00ff00]/20">
         <DropdownMenuItem 
           onClick={() => handleConnect('metamask')} 
-          className="flex items-center gap-2 py-2 cursor-pointer"
+          className="flex items-center gap-2 py-2 cursor-pointer text-[#00ff00] hover:bg-[#00ff00]/10 font-['Press_Start_2P'] text-xs"
         >
           <img src={MetaMaskLogo} alt="MetaMask" className="w-6 h-6" />
           <span>Connect MetaMask</span>
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => handleConnect('coinbase')} 
-          className="flex items-center gap-2 py-2 cursor-pointer"
+          className="flex items-center gap-2 py-2 cursor-pointer text-[#00ff00] hover:bg-[#00ff00]/10 font-['Press_Start_2P'] text-xs"
         >
           <img src={CoinbaseLogo} alt="Coinbase Wallet" className="w-6 h-6" />
-          <span>Connect Coinbase Wallet</span>
+          <span>Connect Coinbase</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
