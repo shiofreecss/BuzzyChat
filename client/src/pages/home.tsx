@@ -119,28 +119,20 @@ export default function Home() {
     setPage([0, -1]); // Animate backward
   };
 
-  const onPublicChat = () => {
-    setSelectedUser(undefined);
-    if (isMobile) {
-      setPage([1, 1]); // Animate forward to chat
-      setLocation('/chat');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-black text-[#2bbd2b] flex flex-col">
       <Header
         onConnect={handleConnect}
         onProfileClick={() => {
           setShowProfile(true);
-          setPage([1, 1]);
+          setPage([1, 1]); // Animate forward
         }}
         onLogout={handleLogout}
         connected={!!address}
         address={address}
       />
 
-      <main className="flex-1 container max-w-6xl mx-auto px-4 py-6 flex flex-col overflow-hidden">
+      <main className="flex-1 container max-w-6xl mx-auto px-4 py-6 flex flex-col">
         {address ? (
           <AnimatePresence mode="wait" custom={direction}>
             {showProfile ? (
@@ -152,51 +144,49 @@ export default function Home() {
                 animate="center"
                 exit="exit"
                 transition={pageTransition}
-                className="flex-1 flex flex-col"
               >
-                <UserProfile
-                  address={address}
+                <UserProfile 
+                  address={address} 
                   onBack={handleBackFromProfile}
                 />
               </motion.div>
             ) : (
-              <div className="flex-1 flex flex-col md:flex-row gap-4 h-full max-h-[calc(100vh-12rem)] overflow-hidden">
-                <AnimatePresence mode="popLayout" custom={direction}>
-                  {(!isMobile || (isMobile && window.location.pathname === '/')) && (
+              <div className="flex-1 flex flex-col md:flex-row gap-6 min-h-[calc(100vh-12rem)]">
+                <AnimatePresence mode="wait" custom={direction}>
+                  {(!selectedUser || !isMobile) && (
                     <motion.div
                       key="chatlist"
                       custom={direction}
                       variants={pageVariants}
                       initial={isMobile ? "enter" : "center"}
                       animate="center"
-                      exit="exit"
+                      exit={isMobile ? "exit" : false}
                       transition={pageTransition}
-                      className="md:w-80 flex-shrink-0 h-full"
                     >
-                      <ChatList
-                        currentAddress={address}
+                      <ChatList 
+                        currentAddress={address} 
                         onSelectUser={handleSelectUser}
-                        onPublicChat={onPublicChat}
+                        onPublicChat={() => handleSelectUser(null)}
                         selectedUser={selectedUser}
                       />
                     </motion.div>
                   )}
-                  {(window.location.pathname === '/chat' || !isMobile) && (
+                  {(selectedUser !== undefined || !isMobile) && (
                     <motion.div
                       key="chatinterface"
                       custom={direction}
                       variants={pageVariants}
                       initial={isMobile ? "enter" : "center"}
                       animate="center"
-                      exit="exit"
+                      exit={isMobile ? "exit" : false}
                       transition={pageTransition}
-                      className="flex-1 min-w-0 h-full"
+                      className="flex-1"
                     >
-                      <ChatInterface
+                      <ChatInterface 
                         address={address}
                         selectedUser={selectedUser}
                         onSelectUser={handleBackToList}
-                        showBackButton={isMobile}
+                        showBackButton={!!selectedUser && isMobile}
                         isPublicChat={!selectedUser}
                       />
                     </motion.div>

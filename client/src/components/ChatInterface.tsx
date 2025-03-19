@@ -16,7 +16,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { shortenAddress } from "@/lib/web3";
 
 interface ChatInterfaceProps {
   address: string;
@@ -230,6 +229,9 @@ export default function ChatInterface({
     });
   };
 
+  const shortenAddress = (address: string) => {
+    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value);
@@ -238,7 +240,7 @@ export default function ChatInterface({
 
 
   return (
-    <Card className="h-full flex flex-col bg-black border border-[#2bbd2b]">
+    <Card className="flex-1 h-full flex flex-col bg-black border border-[#2bbd2b]">
       <div className="p-4 border-b border-[#2bbd2b]/30 flex justify-between items-center">
         <div className="flex items-center gap-3">
           {showBackButton && (
@@ -252,9 +254,9 @@ export default function ChatInterface({
             </Button>
           )}
           <h2 className="text-lg font-['Press_Start_2P'] text-[#2bbd2b]">
-            {isPublicChat ? "Public Chat" : selectedUser ?
-              `Chat with ${selectedUser.username || shortenAddress(selectedUser.address)}` :
-              "Select a user to chat"
+            {selectedUser
+              ? `Chat with ${selectedUser.username || shortenAddress(selectedUser.address)}`
+              : "Public Chat"
             }
           </h2>
           {selectedUser && !showBackButton && (
@@ -268,34 +270,34 @@ export default function ChatInterface({
             </Button>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={clearMessages}
-          className="text-[#2bbd2b] hover:bg-[#2bbd2b]/10"
-        >
-          <Trash2 className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={clearMessages}
+            className="text-[#2bbd2b] hover:bg-[#2bbd2b]/10"
+          >
+            <Trash2 className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="px-4 py-4 space-y-4">
-          {filteredMessages.map((msg) => (
-            <ChatMessage
-              key={msg.id}
-              message={msg}
-              isOwn={msg.fromAddress === address}
-            />
-          ))}
-          {typingUsers.size > 0 && (
-            <div className="text-sm text-[#2bbd2b]/70 italic mb-2 font-mono">
-              {Array.from(typingUsers).map(addr =>
-                shortenAddress(addr)
-              ).join(", ")} {typingUsers.size === 1 ? 'is' : 'are'} typing...
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+      <ScrollArea className="flex-1 p-4">
+        {filteredMessages.map((msg) => (
+          <ChatMessage
+            key={msg.id}
+            message={msg}
+            isOwn={msg.fromAddress === address}
+          />
+        ))}
+        {typingUsers.size > 0 && (
+          <div className="text-sm text-[#2bbd2b]/70 italic mb-2 font-mono">
+            {Array.from(typingUsers).map(addr =>
+              shortenAddress(addr)
+            ).join(", ")} {typingUsers.size === 1 ? 'is' : 'are'} typing...
+          </div>
+        )}
+        <div ref={messagesEndRef} />
       </ScrollArea>
 
       <div className="p-4 border-t border-[#2bbd2b]/30 flex gap-2">
