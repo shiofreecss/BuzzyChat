@@ -11,6 +11,30 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import type { User as UserType } from "@shared/schema";
 
+// Animation variants
+const pageVariants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? 1000 : -1000,
+    opacity: 0
+  }),
+  center: {
+    zIndex: 1,
+    x: 0,
+    opacity: 1
+  },
+  exit: (direction: number) => ({
+    zIndex: 0,
+    x: direction < 0 ? 1000 : -1000,
+    opacity: 0
+  })
+};
+
+const pageTransition = {
+  type: "spring",
+  bounce: 0,
+  duration: 0.3
+};
+
 export default function Home() {
   const [address, setAddress] = useState<string>();
   const [showProfile, setShowProfile] = useState(false);
@@ -18,6 +42,7 @@ export default function Home() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [isMobile, setIsMobile] = useState(false);
+  const [[page, direction], setPage] = useState([0, 0]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -76,24 +101,32 @@ export default function Home() {
   const handleSelectUser = (user: UserType | null) => {
     setSelectedUser(user || undefined);
     if (isMobile) {
+      setPage([1, 1]); // Animate forward
       setLocation('/chat');
     }
   };
 
   const handleBackToList = () => {
     setSelectedUser(undefined);
-    setLocation('/');
+    if (isMobile) {
+      setPage([0, -1]); // Animate backward
+      setLocation('/');
+    }
   };
 
   const handleBackFromProfile = () => {
     setShowProfile(false);
+    setPage([0, -1]); // Animate backward
   };
 
   return (
     <div className="min-h-screen bg-black text-blue-100 flex flex-col">
       <Header
         onConnect={handleConnect}
-        onProfileClick={() => setShowProfile(true)}
+        onProfileClick={() => {
+          setShowProfile(true);
+          setPage([1, 1]); // Animate forward
+        }}
         onLogout={handleLogout}
         connected={!!address}
         address={address}
@@ -101,14 +134,16 @@ export default function Home() {
 
       <main className="flex-1 container max-w-6xl mx-auto p-4 sm:p-6">
         {address ? (
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" custom={direction}>
             {showProfile ? (
               <motion.div
                 key="profile"
-                initial={{ x: "100%", opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: "-100%", opacity: 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                custom={direction}
+                variants={pageVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={pageTransition}
               >
                 <UserProfile 
                   address={address} 
@@ -117,14 +152,16 @@ export default function Home() {
               </motion.div>
             ) : (
               <div className="flex flex-col md:flex-row gap-4">
-                <AnimatePresence mode="wait">
+                <AnimatePresence mode="wait" custom={direction}>
                   {(!selectedUser || !isMobile) && (
                     <motion.div
                       key="chatlist"
-                      initial={isMobile ? { x: "-100%", opacity: 0 } : false}
-                      animate={{ x: 0, opacity: 1 }}
-                      exit={isMobile ? { x: "-100%", opacity: 0 } : false}
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      custom={direction}
+                      variants={pageVariants}
+                      initial={isMobile ? "enter" : "center"}
+                      animate="center"
+                      exit={isMobile ? "exit" : false}
+                      transition={pageTransition}
                     >
                       <ChatList 
                         currentAddress={address} 
@@ -137,10 +174,12 @@ export default function Home() {
                   {(selectedUser !== undefined || !isMobile) && (
                     <motion.div
                       key="chatinterface"
-                      initial={isMobile ? { x: "100%", opacity: 0 } : false}
-                      animate={{ x: 0, opacity: 1 }}
-                      exit={isMobile ? { x: "100%", opacity: 0 } : false}
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      custom={direction}
+                      variants={pageVariants}
+                      initial={isMobile ? "enter" : "center"}
+                      animate="center"
+                      exit={isMobile ? "exit" : false}
+                      transition={pageTransition}
                       className="flex-1"
                     >
                       <ChatInterface 
