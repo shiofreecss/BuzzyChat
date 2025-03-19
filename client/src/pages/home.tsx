@@ -6,7 +6,8 @@ import UserProfile from "@/components/UserProfile";
 import ChatList from "@/components/ChatList";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import ThemeToggle from "@/components/ThemeToggle";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import type { User as UserType } from "@shared/schema";
 
 export default function Home() {
@@ -78,24 +79,16 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-6xl mx-auto p-4 sm:p-6">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary/80 to-primary bg-clip-text text-transparent">
-            Buzzy.Chat
-          </h1>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <WalletConnect
-              onConnect={handleConnect}
-              onProfileClick={() => setShowProfile(true)}
-              onLogout={handleLogout}
-              connected={!!address}
-              address={address}
-            />
-          </div>
-        </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header
+        onConnect={handleConnect}
+        onProfileClick={() => setShowProfile(true)}
+        onLogout={handleLogout}
+        connected={!!address}
+        address={address}
+      />
 
+      <main className="flex-1 container max-w-6xl mx-auto p-4 sm:p-6">
         {address ? (
           showProfile ? (
             <UserProfile 
@@ -157,16 +150,15 @@ export default function Home() {
                   </li>
                 </ul>
               </div>
-              <p className="text-lg text-muted-foreground mt-8">
+              <p className="text-lg text-muted-foreground">
                 Connect your wallet to start chatting in this decentralized space
               </p>
             </div>
-            <div className="text-sm text-muted-foreground bg-card/50 py-4 px-6 rounded-full inline-block mt-12">
-              Powered By Beaver Foundation
-            </div>
           </div>
         )}
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }
