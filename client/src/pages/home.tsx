@@ -162,7 +162,7 @@ export default function Home() {
             ) : (
               <div className="flex-1 flex flex-col md:flex-row gap-4 h-[calc(100vh-16rem)]">
                 <AnimatePresence mode="popLayout" custom={direction}>
-                  {(!selectedUser || !isMobile) && (
+                  {(!isMobile || (isMobile && window.location.pathname === '/')) && (
                     <motion.div
                       key="chatlist"
                       custom={direction}
@@ -181,7 +181,7 @@ export default function Home() {
                       />
                     </motion.div>
                   )}
-                  {(selectedUser !== undefined || !isMobile || window.location.pathname === '/chat') && (
+                  {(!isMobile || (isMobile && window.location.pathname === '/chat')) && (
                     <motion.div
                       key="chatinterface"
                       custom={direction}
@@ -196,7 +196,7 @@ export default function Home() {
                         address={address}
                         selectedUser={selectedUser}
                         onSelectUser={handleBackToList}
-                        showBackButton={!!selectedUser && isMobile}
+                        showBackButton={isMobile}
                         isPublicChat={!selectedUser}
                       />
                     </motion.div>
