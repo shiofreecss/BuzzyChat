@@ -11,6 +11,7 @@
 
   body {
     @apply font-mono antialiased bg-black text-foreground;
+    overflow-x: hidden;
   }
 }
 
@@ -39,5 +40,58 @@
   .retro-text {
     @apply font-['Press_Start_2P'] text-[#2bbd2b];
     text-shadow: 0 0 5px rgba(43, 189, 43, 0.2);
+  }
+
+  .starfield {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* Added z-index for proper layering */
+    overflow: hidden;
+  }
+
+  .star-layer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+  }
+
+  .star {
+    position: absolute;
+    background: #2bbd2b;
+    border-radius: 50%;
+    opacity: 0;
+    animation: starAnimation linear infinite;
+  }
+
+  .star-layer-1 .star {
+    width: 1px;
+    height: 1px;
+    animation-duration: 15s;
+  }
+
+  .star-layer-2 .star {
+    width: 2px;
+    height: 2px;
+    animation-duration: 20s;
+  }
+
+  .star-layer-3 .star {
+    width: 3px;
+    height: 3px;
+    animation-duration: 25s;
+  }
+
+  @keyframes starAnimation {
+    from {
+      transform: translateZ(0) translateY(-100vh);
+      opacity: 0.5;
+    }
+    to {
+      transform: translateZ(0) translateY(100vh);
+      opacity: 0;
+    }
   }
 }
