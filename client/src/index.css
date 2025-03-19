@@ -16,51 +16,28 @@
 
 @layer components {
   .retro-button {
-    @apply px-4 py-2 bg-[#1a1a1a] border border-[#F0B90B] text-[#F0B90B] font-['Press_Start_2P'] text-sm;
-    text-shadow: 0 0 5px rgba(240, 185, 11, 0.3);
-    box-shadow: 0 0 8px rgba(240, 185, 11, 0.15);
-    transition: all 0.2s ease;
+    @apply px-4 py-2 bg-[#1a1a1a] border border-[#2bbd2b] text-[#2bbd2b] font-['Press_Start_2P'] text-sm;
+    text-shadow: 0 0 5px rgba(43, 189, 43, 0.3);
+    box-shadow: 0 0 8px rgba(43, 189, 43, 0.15);
   }
 
   .retro-button:hover {
-    @apply bg-[#F0B90B] text-black;
-    box-shadow: 0 0 15px rgba(240, 185, 11, 0.3);
-  }
-
-  .retro-button:disabled {
-    @apply opacity-50 cursor-not-allowed;
+    @apply bg-[#2bbd2b] text-black;
+    box-shadow: 0 0 15px rgba(43, 189, 43, 0.3);
   }
 
   .retro-input {
-    @apply bg-black border border-[#F0B90B] text-[#F0B90B] font-mono px-3 py-2;
-    box-shadow: inset 0 0 8px rgba(240, 185, 11, 0.1);
-  }
-
-  .retro-input:focus {
-    @apply border-[#F0B90B] ring-1 ring-[#F0B90B];
-    box-shadow: 0 0 15px rgba(240, 185, 11, 0.2);
+    @apply bg-black border border-[#2bbd2b] text-[#2bbd2b] font-mono px-3 py-2;
+    box-shadow: inset 0 0 8px rgba(43, 189, 43, 0.1);
   }
 
   .retro-card {
-    @apply bg-black border border-[#F0B90B] shadow-lg;
-    box-shadow: 0 0 15px rgba(240, 185, 11, 0.1);
+    @apply bg-black border border-[#2bbd2b] shadow-lg;
+    box-shadow: 0 0 15px rgba(43, 189, 43, 0.1);
   }
 
   .retro-text {
-    @apply font-['Press_Start_2P'] text-[#F0B90B];
-    text-shadow: 0 0 5px rgba(240, 185, 11, 0.2);
-  }
-
-  .table-row {
-    @apply px-4 py-2 hover:bg-[#F0B90B]/5 transition-colors;
-    border-bottom: 1px solid rgba(240, 185, 11, 0.1);
-  }
-
-  .table-row:nth-child(even) {
-    background-color: rgba(240, 185, 11, 0.02);
-  }
-
-  .table-cell {
-    @apply px-2 py-1;
+    @apply font-['Press_Start_2P'] text-[#2bbd2b];
+    text-shadow: 0 0 5px rgba(43, 189, 43, 0.2);
   }
 }

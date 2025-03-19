@@ -91,40 +91,40 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
   );
 
   return (
-    <Card className="w-full md:w-80 h-[calc(100vh-8rem)] sm:h-[600px] flex flex-col bg-black border border-[#F0B90B]">
-      <div className="p-4 border-b border-[#F0B90B]/20">
-        <div className="flex items-center gap-2 mb-3">
+    <Card className="w-full md:w-80 h-[calc(100vh-8rem)] sm:h-[600px] flex flex-col bg-black border border-[#2bbd2b]">
+      <div className="p-4 border-b border-[#2bbd2b]/30">
+        <div className="flex justify-between mb-3">
           <Button
-            variant="ghost"
+            variant={viewMode === "friends" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("friends")}
-            className={`flex-1 h-8 retro-button text-xs ${viewMode === "friends" ? 'bg-[#F0B90B]/10' : ''}`}
+            className={`w-1/2 retro-button text-xs ${viewMode === "friends" ? 'bg-[#2bbd2b] text-black' : ''}`}
           >
             Friends ({friends.length})
           </Button>
           <Button
-            variant="ghost"
+            variant={viewMode === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("all")}
-            className={`flex-1 h-8 retro-button text-xs ${viewMode === "all" ? 'bg-[#F0B90B]/10' : ''}`}
+            className={`w-1/2 retro-button text-xs ${viewMode === "all" ? 'bg-[#2bbd2b] text-black' : ''}`}
           >
             All Users
           </Button>
         </div>
         <div className="relative">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-[#F0B90B]/50" />
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-[#2bbd2b]/50" />
           <Input
-            placeholder="Search..."
+            placeholder={viewMode === "friends" ? "Search friends..." : "Search users..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 retro-input text-xs h-8 bg-[#F0B90B]/5"
+            className="pl-8 retro-input text-xs h-8"
           />
         </div>
       </div>
 
       <Button
         variant="ghost"
-        className={`mx-4 mt-2 flex items-center gap-2 retro-button text-xs ${!selectedUser ? 'bg-[#F0B90B]/10' : ''}`}
+        className={`m-4 flex items-center gap-2 retro-button text-xs ${!selectedUser ? 'bg-[#2bbd2b] text-black' : ''}`}
         onClick={onPublicChat}
       >
         <Users className="h-4 w-4" />
@@ -132,38 +132,34 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
       </Button>
 
       {friendRequests.length > 0 && (
-        <div className="mx-4 mt-2 p-2 rounded border border-[#F0B90B]/20 bg-[#F0B90B]/5">
-          <h3 className="text-xs font-['Press_Start_2P'] mb-2 text-[#F0B90B]">
-            Requests ({friendRequests.length})
+        <div className="p-4 border-b border-[#2bbd2b]/30 bg-[#2bbd2b]/5">
+          <h3 className="text-xs font-['Press_Start_2P'] mb-2 text-[#2bbd2b]">
+            Friend Requests ({friendRequests.length})
           </h3>
-          <div className="space-y-1">
-            {friendRequests.map((request) => (
-              <div key={request.id} 
-                className="flex items-center justify-between p-2 rounded hover:bg-[#F0B90B]/10 transition-colors"
+          {friendRequests.map((request) => (
+            <div key={request.id} className="flex items-center justify-between mb-2">
+              <span className="text-xs font-mono text-[#2bbd2b]/80">
+                {shortenAddress(request.requestorAddress)}
+              </span>
+              <Button
+                size="sm"
+                onClick={() => acceptFriendRequest(request.id)}
+                className="retro-button text-xs h-7"
               >
-                <span className="text-xs font-mono text-[#F0B90B]">
-                  {shortenAddress(request.requestorAddress)}
-                </span>
-                <Button
-                  size="sm"
-                  onClick={() => acceptFriendRequest(request.id)}
-                  className="h-6 px-2 retro-button text-xs"
-                >
-                  <UserCheck className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
+                <UserCheck className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
         </div>
       )}
 
-      <ScrollArea className="flex-1 px-4">
-        <div className="space-y-1 py-2">
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-2">
           {viewMode === "friends" ? (
             friends.length === 0 ? (
-              <div className="text-center py-8 text-[#F0B90B]/70 font-['Press_Start_2P'] text-xs">
+              <div className="text-center py-8 text-[#2bbd2b]/70 font-['Press_Start_2P'] text-xs">
                 <p>No friends yet</p>
-                <p className="mt-2 text-[10px]">Switch to "All Users" to add friends</p>
+                <p className="text-xs mt-2">Switch to "All Users" to add friends</p>
               </div>
             ) : (
               friends
@@ -172,24 +168,21 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
                   friend.address.toLowerCase().includes(searchQuery.toLowerCase())
                 )
                 .map((friend) => (
-                  <div 
-                    key={friend.id} 
-                    className={`group rounded transition-colors ${
-                      selectedUser?.id === friend.id ? 'bg-[#F0B90B]/10' : 'hover:bg-[#F0B90B]/5'
-                    }`}
-                  >
+                  <div key={friend.id} className="flex items-center justify-between">
                     <Button
                       variant="ghost"
-                      className="w-full justify-start gap-2 p-2 h-auto retro-button text-xs"
+                      className={`flex-1 justify-start gap-2 retro-button text-xs ${
+                        selectedUser?.id === friend.id ? 'bg-[#2bbd2b] text-black' : ''
+                      }`}
                       onClick={() => onSelectUser(friend)}
                     >
-                      <MessageSquare className="h-4 w-4 shrink-0" />
-                      <div className="text-left truncate">
-                        <div className="font-['Press_Start_2P'] text-xs truncate">
+                      <MessageSquare className="h-4 w-4" />
+                      <div className="text-left">
+                        <div className="font-['Press_Start_2P'] text-xs">
                           {friend.username || shortenAddress(friend.address)}
                         </div>
                         {friend.username && (
-                          <div className="text-[10px] font-mono opacity-70 truncate">
+                          <div className="text-[10px] font-mono opacity-70">
                             {shortenAddress(friend.address)}
                           </div>
                         )}
@@ -199,49 +192,40 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
                 ))
             )
           ) : (
-            users
-              .filter(user =>
-                user.address !== currentAddress &&
-                (user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  user.address.toLowerCase().includes(searchQuery.toLowerCase()))
-              )
-              .map((user) => (
-                <div 
-                  key={user.id} 
-                  className={`group rounded flex items-center transition-colors ${
-                    selectedUser?.id === user.id ? 'bg-[#F0B90B]/10' : 'hover:bg-[#F0B90B]/5'
+            filteredUsers.map((user) => (
+              <div key={user.id} className="flex items-center justify-between">
+                <Button
+                  variant="ghost"
+                  className={`flex-1 justify-start gap-2 retro-button text-xs ${
+                    selectedUser?.id === user.id ? 'bg-[#2bbd2b] text-black' : ''
                   }`}
+                  onClick={() => isFriend(user.address) && onSelectUser(user)}
+                  disabled={!isFriend(user.address)}
                 >
+                  <MessageSquare className="h-4 w-4" />
+                  <div className="text-left">
+                    <div className="font-['Press_Start_2P'] text-xs">
+                      {user.username || shortenAddress(user.address)}
+                    </div>
+                    {user.username && (
+                      <div className="text-[10px] font-mono opacity-70">
+                        {shortenAddress(user.address)}
+                      </div>
+                    )}
+                  </div>
+                </Button>
+                {!isFriend(user.address) && !hasPendingRequest(user.address) && (
                   <Button
                     variant="ghost"
-                    className="flex-1 justify-start gap-2 p-2 h-auto retro-button text-xs"
-                    onClick={() => isFriend(user.address) && onSelectUser(user)}
-                    disabled={!isFriend(user.address)}
+                    size="icon"
+                    onClick={() => sendFriendRequest(user.address)}
+                    className="ml-2 retro-button h-7 w-7"
                   >
-                    <MessageSquare className="h-4 w-4 shrink-0" />
-                    <div className="text-left truncate">
-                      <div className="font-['Press_Start_2P'] text-xs truncate">
-                        {user.username || shortenAddress(user.address)}
-                      </div>
-                      {user.username && (
-                        <div className="text-[10px] font-mono opacity-70 truncate">
-                          {shortenAddress(user.address)}
-                        </div>
-                      )}
-                    </div>
+                    <UserPlus className="h-4 w-4" />
                   </Button>
-                  {!isFriend(user.address) && !hasPendingRequest(user.address) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => sendFriendRequest(user.address)}
-                      className="mr-2 h-6 w-6 retro-button"
-                    >
-                      <UserPlus className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))
+                )}
+              </div>
+            ))
           )}
         </div>
       </ScrollArea>
