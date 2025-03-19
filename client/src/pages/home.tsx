@@ -133,7 +133,7 @@ export default function Home() {
         onConnect={handleConnect}
         onProfileClick={() => {
           setShowProfile(true);
-          setPage([1, 1]); // Animate forward
+          setPage([1, 1]);
         }}
         onLogout={handleLogout}
         connected={!!address}
@@ -152,15 +152,16 @@ export default function Home() {
                 animate="center"
                 exit="exit"
                 transition={pageTransition}
+                className="flex-1 flex flex-col"
               >
-                <UserProfile 
-                  address={address} 
+                <UserProfile
+                  address={address}
                   onBack={handleBackFromProfile}
                 />
               </motion.div>
             ) : (
-              <div className="flex-1 flex flex-col md:flex-row gap-4 max-h-[calc(100vh-16rem)]">
-                <AnimatePresence mode="wait" custom={direction}>
+              <div className="flex-1 flex flex-col md:flex-row gap-4 h-[calc(100vh-16rem)]">
+                <AnimatePresence mode="popLayout" custom={direction}>
                   {(!selectedUser || !isMobile) && (
                     <motion.div
                       key="chatlist"
@@ -168,12 +169,12 @@ export default function Home() {
                       variants={pageVariants}
                       initial={isMobile ? "enter" : "center"}
                       animate="center"
-                      exit={isMobile ? "exit" : false}
+                      exit="exit"
                       transition={pageTransition}
                       className="md:w-80 flex-shrink-0"
                     >
-                      <ChatList 
-                        currentAddress={address} 
+                      <ChatList
+                        currentAddress={address}
                         onSelectUser={handleSelectUser}
                         onPublicChat={onPublicChat}
                         selectedUser={selectedUser}
@@ -187,11 +188,11 @@ export default function Home() {
                       variants={pageVariants}
                       initial={isMobile ? "enter" : "center"}
                       animate="center"
-                      exit={isMobile ? "exit" : false}
+                      exit="exit"
                       transition={pageTransition}
                       className="flex-1 min-w-0"
                     >
-                      <ChatInterface 
+                      <ChatInterface
                         address={address}
                         selectedUser={selectedUser}
                         onSelectUser={handleBackToList}
