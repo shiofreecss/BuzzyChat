@@ -119,7 +119,13 @@ export default function Home() {
     setPage([0, -1]); // Animate backward
   };
 
-  const onPublicChat = () => handleSelectUser(null); //Added this line based on the edited snippet.  It was implicit.
+  const onPublicChat = () => {
+    handleSelectUser(null);
+    if (isMobile) {
+      setPage([1, 1]); // Animate forward to chat
+      setLocation('/chat');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black text-[#2bbd2b] flex flex-col">
