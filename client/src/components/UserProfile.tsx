@@ -80,13 +80,13 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
 
   if (isLoading) {
     return (
-      <Card className="w-full max-w-md mx-auto">
+      <Card className="w-full max-w-md mx-auto bg-black border border-[#2bbd2b]">
         <CardContent className="p-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-            <div className="h-8 bg-gray-200 rounded"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-            <div className="h-8 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-[#2bbd2b]/10 rounded w-1/4"></div>
+            <div className="h-8 bg-[#2bbd2b]/10 rounded"></div>
+            <div className="h-4 bg-[#2bbd2b]/10 rounded w-1/4"></div>
+            <div className="h-8 bg-[#2bbd2b]/10 rounded"></div>
           </div>
         </CardContent>
       </Card>
@@ -94,19 +94,21 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto bg-black border border-[#2bbd2b]">
       <CardHeader>
         <div className="flex items-center justify-between">
           <Button 
             variant="ghost" 
             onClick={onBack}
-            className="p-0 hover:bg-transparent"
+            className="p-0 hover:bg-transparent text-[#2bbd2b] hover:text-[#2bbd2b]/80"
           >
             <ArrowLeft className="h-6 w-6" />
           </Button>
-          <CardTitle className="flex-1 text-center">Profile Settings</CardTitle>
+          <CardTitle className="flex-1 text-center font-['Press_Start_2P'] text-[#2bbd2b] text-sm sm:text-base">
+            Profile Settings
+          </CardTitle>
           {!isEditing && (
-            <Button onClick={startEditing} variant="outline">
+            <Button onClick={startEditing} className="retro-button text-xs">
               Edit Profile
             </Button>
           )}
@@ -116,27 +118,27 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
         {isEditing ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label className="font-['Press_Start_2P'] text-xs text-[#2bbd2b]">Username</Label>
               <Input
-                id="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter username"
                 disabled={isSubmitting}
+                className="retro-input"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="nickname">Nickname</Label>
+              <Label className="font-['Press_Start_2P'] text-xs text-[#2bbd2b]">Nickname</Label>
               <Input
-                id="nickname"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
                 placeholder="Enter nickname"
                 disabled={isSubmitting}
+                className="retro-input"
               />
             </div>
             <div className="flex gap-2">
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="retro-button text-xs">
                 {isSubmitting ? "Saving..." : "Save Changes"}
               </Button>
               <Button 
@@ -144,6 +146,7 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
                 variant="outline" 
                 onClick={() => setIsEditing(false)}
                 disabled={isSubmitting}
+                className="retro-button text-xs bg-transparent"
               >
                 Cancel
               </Button>
@@ -152,20 +155,22 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
         ) : (
           <div className="space-y-4">
             <div>
-              <Label>Username</Label>
-              <p className="text-lg font-medium">
+              <Label className="font-['Press_Start_2P'] text-xs text-[#2bbd2b]">Username</Label>
+              <p className="mt-1 font-mono text-[#2bbd2b]/80 text-sm">
                 {user?.username || "Not set"}
               </p>
             </div>
             <div>
-              <Label>Nickname</Label>
-              <p className="text-lg font-medium">
+              <Label className="font-['Press_Start_2P'] text-xs text-[#2bbd2b]">Nickname</Label>
+              <p className="mt-1 font-mono text-[#2bbd2b]/80 text-sm">
                 {user?.nickname || "Not set"}
               </p>
             </div>
             <div>
-              <Label>Wallet Address</Label>
-              <p className="text-sm font-mono break-all">{address}</p>
+              <Label className="font-['Press_Start_2P'] text-xs text-[#2bbd2b]">Wallet Address</Label>
+              <p className="mt-1 font-mono text-[#2bbd2b]/80 text-xs break-all">
+                {address}
+              </p>
             </div>
           </div>
         )}
