@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { connectWallet, disconnectWallet, shortenAddress } from "@/lib/web3";
+import { connectWallet } from "@/lib/web3";
 import { useState } from "react";
 import { Wallet, Settings, LogOut } from "lucide-react";
 import {
@@ -49,9 +49,8 @@ export default function WalletConnect({ onConnect, onProfileClick, onLogout, con
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button className="retro-button h-8 sm:h-10 px-2 sm:px-4 text-[10px] sm:text-xs">
-            <Wallet className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-            {shortenAddress(address!)}
+          <Button className="h-8 sm:h-10 w-8 sm:w-10 p-0 aspect-square retro-button">
+            <Wallet className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48 bg-black border border-[#2bbd2b] shadow-lg shadow-[#2bbd2b]/20">
@@ -80,7 +79,7 @@ export default function WalletConnect({ onConnect, onProfileClick, onLogout, con
           className="retro-button h-8 sm:h-10 px-2 sm:px-4 text-[10px] sm:text-xs"
         >
           <Wallet className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-          {connecting ? "Connecting..." : "Connect"}
+          {connecting ? "..." : "Connect"}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 bg-black border border-[#2bbd2b] shadow-lg shadow-[#2bbd2b]/20">
