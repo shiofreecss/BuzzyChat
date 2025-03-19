@@ -7,6 +7,7 @@ export const users = pgTable("users", {
   address: text("address").notNull().unique(),
   username: text("username"),
   nickname: text("nickname"),
+  country: text("country"),
 });
 
 export const messages = pgTable("messages", {
@@ -33,16 +34,18 @@ export const reactions = pgTable("reactions", {
   timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
-// Existing schemas
+// Update schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   address: true,
   username: true,
   nickname: true,
+  country: true,
 });
 
 export const updateUserSchema = createInsertSchema(users).pick({
   username: true,
   nickname: true,
+  country: true,
 });
 
 export const insertMessageSchema = createInsertSchema(messages).pick({
@@ -58,7 +61,6 @@ export const insertFriendRequestSchema = createInsertSchema(friends).pick({
   status: z.literal('pending')
 });
 
-// Add reaction schema
 export const insertReactionSchema = createInsertSchema(reactions).pick({
   messageId: true,
   fromAddress: true,
