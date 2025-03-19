@@ -252,8 +252,8 @@ export default function ChatInterface({
             </Button>
           )}
           <h2 className="text-lg font-['Press_Start_2P'] text-[#2bbd2b]">
-            {isPublicChat ? "Public Chat" : selectedUser ? 
-              `Chat with ${selectedUser.username || shortenAddress(selectedUser.address)}` : 
+            {isPublicChat ? "Public Chat" : selectedUser ?
+              `Chat with ${selectedUser.username || shortenAddress(selectedUser.address)}` :
               "Select a user to chat"
             }
           </h2>
@@ -278,8 +278,8 @@ export default function ChatInterface({
         </Button>
       </div>
 
-      <ScrollArea className="flex-1 px-4">
-        <div className="py-4 space-y-4">
+      <ScrollArea className="flex-1">
+        <div className="px-4 py-4 space-y-4">
           {filteredMessages.map((msg) => (
             <ChatMessage
               key={msg.id}

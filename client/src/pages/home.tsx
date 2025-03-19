@@ -11,7 +11,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import type { User as UserType } from "@shared/schema";
 
-// Animation variants remain unchanged
+// Animation variants
 const pageVariants = {
   enter: (direction: number) => ({
     x: direction > 0 ? 1000 : -1000,
@@ -140,7 +140,7 @@ export default function Home() {
         address={address}
       />
 
-      <main className="flex-1 container max-w-6xl mx-auto px-4 py-6 flex flex-col">
+      <main className="flex-1 container max-w-6xl mx-auto px-4 py-6 flex flex-col overflow-hidden">
         {address ? (
           <AnimatePresence mode="wait" custom={direction}>
             {showProfile ? (
@@ -160,7 +160,7 @@ export default function Home() {
                 />
               </motion.div>
             ) : (
-              <div className="flex-1 flex flex-col md:flex-row gap-4 h-[calc(100vh-16rem)]">
+              <div className="flex-1 flex flex-col md:flex-row gap-4 h-full max-h-[calc(100vh-12rem)] overflow-hidden">
                 <AnimatePresence mode="popLayout" custom={direction}>
                   {(!isMobile || (isMobile && window.location.pathname === '/')) && (
                     <motion.div
@@ -171,7 +171,7 @@ export default function Home() {
                       animate="center"
                       exit="exit"
                       transition={pageTransition}
-                      className="md:w-80 flex-shrink-0"
+                      className="md:w-80 flex-shrink-0 h-full"
                     >
                       <ChatList
                         currentAddress={address}
@@ -190,7 +190,7 @@ export default function Home() {
                       animate="center"
                       exit="exit"
                       transition={pageTransition}
-                      className="flex-1 min-w-0"
+                      className="flex-1 min-w-0 h-full"
                     >
                       <ChatInterface
                         address={address}
