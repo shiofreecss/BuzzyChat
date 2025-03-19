@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,6 +10,34 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-mono antialiased bg-black text-foreground;
+  }
+}
+
+@layer components {
+  .retro-button {
+    @apply px-4 py-2 bg-[#1a1a1a] border border-[#00ff00] text-[#00ff00] font-['Press_Start_2P'] text-sm;
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+  }
+
+  .retro-button:hover {
+    @apply bg-[#00ff00] text-black;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
+  }
+
+  .retro-input {
+    @apply bg-black border border-[#00ff00] text-[#00ff00] font-mono px-3 py-2;
+    box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.1);
+  }
+
+  .retro-card {
+    @apply bg-black border border-[#00ff00] shadow-lg;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
+  }
+
+  .retro-text {
+    @apply font-['Press_Start_2P'] text-[#00ff00];
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
   }
 }
