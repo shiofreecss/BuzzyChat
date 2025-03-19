@@ -6,20 +6,25 @@ export default function Starfield() {
   useEffect(() => {
     if (!starfield.current) return;
 
-    const createStars = (layer: number) => {
-      const starCount = layer === 1 ? 50 : layer === 2 ? 30 : 20;
-      const layerElement = document.createElement('div');
-      layerElement.className = `star-layer star-layer-${layer}`;
+    const createStars = () => {
+      const starCount = 100; // Adjust this number for more or fewer stars
 
       for (let i = 0; i < starCount; i++) {
         const star = document.createElement('div');
         star.className = 'star';
-        star.style.left = `${Math.random() * 100}%`;
-        star.style.animationDelay = `${Math.random() * 10}s`;
-        layerElement.appendChild(star);
-      }
 
-      return layerElement;
+        // Random position
+        star.style.left = `${Math.random() * 100}%`;
+        star.style.top = `${Math.random() * 100}%`;
+
+        // Random animation duration between 1 and 3 seconds
+        star.style.animationDuration = `${1 + Math.random() * 2}s`;
+
+        // Random delay to start the animation
+        star.style.animationDelay = `${Math.random() * 3}s`;
+
+        starfield.current?.appendChild(star);
+      }
     };
 
     const clearStars = () => {
@@ -29,9 +34,7 @@ export default function Starfield() {
     };
 
     clearStars();
-    [1, 2, 3].forEach(layer => {
-      starfield.current?.appendChild(createStars(layer));
-    });
+    createStars();
 
     return () => clearStars();
   }, []);
