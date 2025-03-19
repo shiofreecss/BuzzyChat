@@ -143,7 +143,7 @@ export default function Home() {
         address={address}
       />
 
-      <main className="flex-1 container max-w-6xl mx-auto p-4 sm:p-6">
+      <main className="flex-1 container max-w-6xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
         {address ? (
           <AnimatePresence mode="wait" custom={direction}>
             {showProfile ? (
@@ -162,7 +162,7 @@ export default function Home() {
                 />
               </motion.div>
             ) : (
-              <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex flex-col md:flex-row gap-2">
                 <AnimatePresence mode="wait" custom={direction}>
                   {showChatList && (
                     <motion.div
