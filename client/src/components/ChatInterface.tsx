@@ -18,23 +18,32 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-// Update the ChatInterfaceProps interface
 interface ChatInterfaceProps {
   address: string;
   selectedUser?: User;
   onSelectUser?: (user?: User) => void;
   showBackButton?: boolean;
+  isPublicChat?: boolean;
 }
 
-export default function ChatInterface({ address, selectedUser, onSelectUser, showBackButton = false }: ChatInterfaceProps) {
+export default function ChatInterface({ 
+  address, 
+  selectedUser, 
+  onSelectUser, 
+  showBackButton = false,
+  isPublicChat = false
+}: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
+  const [lastTypingTime, setLastTypingTime] = useState(0);
   const socketRef = useRef<WebSocket>();
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [chatTheme, setChatTheme] = useState<ChatTheme>({
@@ -81,22 +90,41 @@ export default function ChatInterface({ address, selectedUser, onSelectUser, sho
     };
 
     socketRef.current.onmessage = (event) => {
-      console.log("Received message:", event.data);
       try {
         const data = JSON.parse(event.data);
-        if (data.error) {
-          toast({
-            variant: "destructive",
-            title: "Message Error",
-            description: data.error,
+
+        if (data.type === 'typing') {
+          setTypingUsers(prev => {
+            const newSet = new Set(prev);
+            newSet.add(data.fromAddress);
+            return newSet;
           });
-          return;
+
+          // Clear typing indicator after 3 seconds
+          if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+          }
+          typingTimeoutRef.current = setTimeout(() => {
+            setTypingUsers(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(data.fromAddress);
+              return newSet;
+            });
+          }, 3000);
+        } else {
+          // Handle regular messages
+          if (data.error) {
+            toast({
+              variant: "destructive",
+              title: "Message Error",
+              description: data.error,
+            });
+            return;
+          }
+          if (!data.connected) {
+            setMessages(prev => [...prev, data]);
+          }
         }
-
-        // If it's a welcome message, don't add it to chat
-        if (data.connected) return;
-
-        setMessages(prev => [...prev, data]);
       } catch (error) {
         console.error("Failed to parse message:", error);
       }
@@ -169,6 +197,20 @@ export default function ChatInterface({ address, selectedUser, onSelectUser, sho
     }
   };
 
+  const sendTypingStatus = () => {
+    const now = Date.now();
+    if (now - lastTypingTime > 2000) { // Only send every 2 seconds
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        socketRef.current.send(JSON.stringify({
+          type: 'typing',
+          fromAddress: address,
+          toAddress: selectedUser?.address,
+        }));
+        setLastTypingTime(now);
+      }
+    }
+  };
+
   // Filter messages based on the selected chat mode (public or private)
   const filteredMessages = selectedUser
     ? messages.filter(msg =>
@@ -196,9 +238,14 @@ export default function ChatInterface({ address, selectedUser, onSelectUser, sho
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMessage(e.target.value);
+    sendTypingStatus();
+  };
+
 
   return (
-    <Card className="flex-1 h-[calc(100vh-8rem)] sm:h-[600px] flex flex-col" style={{ backgroundColor: chatTheme.background }}>
+    <Card className="flex-1 h-[calc(100vh-8rem)] sm:h-[600px] flex flex-col bg-card">
       <div className="p-4 border-b border-gray-800 flex justify-between items-center">
         <div className="flex items-center gap-3">
           {showBackButton && (
@@ -250,6 +297,13 @@ export default function ChatInterface({ address, selectedUser, onSelectUser, sho
             isOwn={msg.fromAddress === address}
           />
         ))}
+        {typingUsers.size > 0 && (
+          <div className="text-sm text-muted-foreground italic mb-2">
+            {Array.from(typingUsers).map(addr => 
+              shortenAddress(addr)
+            ).join(", ")} {typingUsers.size === 1 ? 'is' : 'are'} typing...
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </ScrollArea>
 
@@ -278,7 +332,7 @@ export default function ChatInterface({ address, selectedUser, onSelectUser, sho
           </Popover>
           <Input
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={handleInputChange}
             placeholder="Type a message..."
             onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
             disabled={!isConnected}

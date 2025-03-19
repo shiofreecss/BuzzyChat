@@ -2,10 +2,10 @@ import { Card } from "@/components/ui/card";
 import { shortenAddress } from "@/lib/web3";
 import { type Message, type Reaction } from "@shared/schema";
 import { format } from "date-fns";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Check, CheckCheck } from "lucide-react";
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import {
@@ -52,7 +52,6 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
         emoji: emoji.native,
         fromAddress: message.fromAddress,
       });
-      // Invalidate reactions query to trigger refetch
       await queryClient.invalidateQueries({ 
         queryKey: [`/api/messages/${message.id}/reactions`] 
       });
@@ -67,22 +66,32 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4 group`}>
       <Card className={`max-w-[80%] p-3 relative ${
         isOwn 
-          ? 'bg-purple-600 text-white' 
-          : 'bg-gray-800 text-gray-100'
+          ? 'bg-primary text-primary-foreground' 
+          : 'bg-muted'
       }`}>
         <div className="text-sm font-medium mb-1 opacity-90">
           {shortenAddress(message.fromAddress)}
         </div>
         <div className="break-words">{message.content}</div>
-        <div className="text-xs mt-1 opacity-70">
+
+        {/* Timestamp and Read Status */}
+        <div className="text-xs mt-2 opacity-70 flex items-center gap-1">
           {format(new Date(message.timestamp), 'HH:mm')}
+          {isOwn && (
+            <span className="ml-1">
+              <CheckCheck className="h-3 w-3 inline" />
+            </span>
+          )}
         </div>
 
         {/* Reactions */}
         {reactionCounts.length > 0 && (
-          <div className="flex gap-1 mt-2">
+          <div className="flex flex-wrap gap-1 mt-2">
             {reactionCounts.map((reaction, index) => (
-              <span key={index} className="bg-black/20 rounded px-1.5 py-0.5 text-sm">
+              <span 
+                key={index} 
+                className="bg-black/20 rounded px-1.5 py-0.5 text-sm"
+              >
                 {reaction.emoji} {reaction.count}
               </span>
             ))}
@@ -95,7 +104,7 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
             <Button 
               variant="ghost" 
               size="icon"
-              className="opacity-0 group-hover:opacity-100 absolute -right-8 top-2 h-6 w-6 p-1 text-gray-400 hover:text-gray-200 hover:bg-gray-700/50 transition-opacity"
+              className="opacity-0 group-hover:opacity-100 absolute -right-8 top-2 h-6 w-6 p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-opacity"
             >
               <PlusCircle className="h-4 w-4" />
             </Button>
