@@ -79,7 +79,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-black text-blue-100 flex flex-col">
       <Header
         onConnect={handleConnect}
         onProfileClick={() => setShowProfile(true)}
@@ -118,41 +118,41 @@ export default function Home() {
           )
         ) : (
           <div className="text-center py-20 space-y-8">
-            <h2 className="text-4xl font-bold text-blue-600">
+            <h2 className="text-4xl font-bold text-blue-400 [text-shadow:_0_0_30px_rgb(96_165_250_/_20%)]">
               Welcome to Buzzy.Chat
             </h2>
             <div className="max-w-2xl mx-auto space-y-6">
-              <p className="text-xl text-blue-800">
+              <p className="text-xl text-blue-300">
                 A decentralized social chat platform powered by blockchain technology,
                 offering secure and seamless communication in the Web3 era.
               </p>
-              <div className="bg-white rounded-lg p-6 shadow-lg max-w-md mx-auto border border-blue-100">
+              <div className="bg-blue-900/10 backdrop-blur-sm rounded-lg p-6 shadow-lg max-w-md mx-auto border border-blue-400/20">
                 <ul className="text-left space-y-4">
-                  <li className="flex items-center gap-2 text-blue-700">
+                  <li className="flex items-center gap-2 text-blue-300">
                     <span className="text-xl">🔒</span>
                     <span>Secure wallet-based authentication</span>
                   </li>
-                  <li className="flex items-center gap-2 text-blue-700">
+                  <li className="flex items-center gap-2 text-blue-300">
                     <span className="text-xl">💬</span>
                     <span>Real-time messaging with friends</span>
                   </li>
-                  <li className="flex items-center gap-2 text-blue-700">
+                  <li className="flex items-center gap-2 text-blue-300">
                     <span className="text-xl">🌐</span>
                     <span>Public chat channels</span>
                   </li>
-                  <li className="flex items-center gap-2 text-blue-700">
+                  <li className="flex items-center gap-2 text-blue-300">
                     <span className="text-xl">🤝</span>
                     <span>Friend request system</span>
                   </li>
-                  <li className="flex items-center gap-2 text-blue-700">
+                  <li className="flex items-center gap-2 text-blue-300">
                     <span className="text-xl">🎨</span>
                     <span>Beautiful, responsive design</span>
                   </li>
                 </ul>
               </div>
-              <p className="text-lg text-blue-600">
+              <div className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500/10 rounded-full border border-blue-400/20 text-blue-400">
                 Connect your wallet to start chatting in this decentralized space
-              </p>
+              </div>
             </div>
           </div>
         )}
