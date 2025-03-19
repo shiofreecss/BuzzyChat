@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { motion, AnimatePresence } from "framer-motion";
 import WalletConnect from "@/components/WalletConnect";
 import ChatInterface from "@/components/ChatInterface";
 import UserProfile from "@/components/UserProfile";
@@ -16,6 +17,16 @@ export default function Home() {
   const [selectedUser, setSelectedUser] = useState<UserType>();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const savedAddress = localStorage.getItem('walletAddress');
@@ -63,8 +74,8 @@ export default function Home() {
   };
 
   const handleSelectUser = (user: UserType | null) => {
-    setSelectedUser(user);
-    if (window.innerWidth <= 768) {
+    setSelectedUser(user || undefined);
+    if (isMobile) {
       setLocation('/chat');
     }
   };
@@ -90,32 +101,61 @@ export default function Home() {
 
       <main className="flex-1 container max-w-6xl mx-auto p-4 sm:p-6">
         {address ? (
-          showProfile ? (
-            <UserProfile 
-              address={address} 
-              onBack={handleBackFromProfile}
-            />
-          ) : (
-            <div className="flex flex-col md:flex-row gap-4">
-              {(!selectedUser || window.innerWidth > 768) && (
-                <ChatList 
-                  currentAddress={address} 
-                  onSelectUser={handleSelectUser}
-                  onPublicChat={() => handleSelectUser(null)}
-                  selectedUser={selectedUser}
+          <AnimatePresence mode="wait">
+            {showProfile ? (
+              <motion.div
+                key="profile"
+                initial={{ x: "100%", opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: "-100%", opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              >
+                <UserProfile 
+                  address={address} 
+                  onBack={handleBackFromProfile}
                 />
-              )}
-              {(selectedUser !== undefined || window.innerWidth > 768) && (
-                <ChatInterface 
-                  address={address}
-                  selectedUser={selectedUser}
-                  onSelectUser={handleBackToList}
-                  showBackButton={!!selectedUser && window.innerWidth <= 768}
-                  isPublicChat={!selectedUser}
-                />
-              )}
-            </div>
-          )
+              </motion.div>
+            ) : (
+              <div className="flex flex-col md:flex-row gap-4">
+                <AnimatePresence mode="wait">
+                  {(!selectedUser || !isMobile) && (
+                    <motion.div
+                      key="chatlist"
+                      initial={isMobile ? { x: "-100%", opacity: 0 } : false}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={isMobile ? { x: "-100%", opacity: 0 } : false}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    >
+                      <ChatList 
+                        currentAddress={address} 
+                        onSelectUser={handleSelectUser}
+                        onPublicChat={() => handleSelectUser(null)}
+                        selectedUser={selectedUser}
+                      />
+                    </motion.div>
+                  )}
+                  {(selectedUser !== undefined || !isMobile) && (
+                    <motion.div
+                      key="chatinterface"
+                      initial={isMobile ? { x: "100%", opacity: 0 } : false}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={isMobile ? { x: "100%", opacity: 0 } : false}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      className="flex-1"
+                    >
+                      <ChatInterface 
+                        address={address}
+                        selectedUser={selectedUser}
+                        onSelectUser={handleBackToList}
+                        showBackButton={!!selectedUser && isMobile}
+                        isPublicChat={!selectedUser}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+          </AnimatePresence>
         ) : (
           <div className="text-center py-20 space-y-8">
             <h2 className="text-4xl font-bold text-blue-400 [text-shadow:_0_0_30px_rgb(96_165_250_/_20%)]">
