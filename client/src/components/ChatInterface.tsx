@@ -25,10 +25,10 @@ interface ChatInterfaceProps {
   isPublicChat?: boolean;
 }
 
-export default function ChatInterface({ 
-  address, 
-  selectedUser, 
-  onSelectUser, 
+export default function ChatInterface({
+  address,
+  selectedUser,
+  onSelectUser,
   showBackButton = false,
   isPublicChat = false
 }: ChatInterfaceProps) {
@@ -240,20 +240,20 @@ export default function ChatInterface({
 
 
   return (
-    <Card className="flex-1 h-[calc(100vh-8rem)] sm:h-[600px] flex flex-col bg-black border border-[#00ff00]">
-      <div className="p-4 border-b border-[#00ff00]/30 flex justify-between items-center">
+    <Card className="flex-1 h-[calc(100vh-8rem)] sm:h-[600px] flex flex-col bg-black border border-[#2bbd2b]">
+      <div className="p-4 border-b border-[#2bbd2b]/30 flex justify-between items-center">
         <div className="flex items-center gap-3">
           {showBackButton && (
             <Button
               variant="ghost"
               size="icon"
               onClick={() => onSelectUser?.(undefined)}
-              className="md:hidden hover:bg-[#00ff00]/10 text-[#00ff00]"
+              className="md:hidden hover:bg-[#2bbd2b]/10 text-[#2bbd2b]"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
-          <h2 className="text-lg font-['Press_Start_2P'] text-[#00ff00]">
+          <h2 className="text-lg font-['Press_Start_2P'] text-[#2bbd2b]">
             {selectedUser
               ? `Chat with ${selectedUser.username || shortenAddress(selectedUser.address)}`
               : "Public Chat"
@@ -264,7 +264,7 @@ export default function ChatInterface({
               variant="outline"
               size="sm"
               onClick={() => onSelectUser?.(undefined)}
-              className="text-xs hidden md:inline-flex border-[#00ff00]/20 text-[#00ff00] hover:bg-[#00ff00]/10"
+              className="text-xs hidden md:inline-flex border-[#2bbd2b]/20 text-[#2bbd2b] hover:bg-[#2bbd2b]/10"
             >
               Return to Public Chat
             </Button>
@@ -275,7 +275,7 @@ export default function ChatInterface({
             variant="ghost"
             size="icon"
             onClick={clearMessages}
-            className="text-[#00ff00] hover:bg-[#00ff00]/10"
+            className="text-[#2bbd2b] hover:bg-[#2bbd2b]/10"
           >
             <Trash2 className="h-5 w-5" />
           </Button>
@@ -291,8 +291,8 @@ export default function ChatInterface({
           />
         ))}
         {typingUsers.size > 0 && (
-          <div className="text-sm text-[#00ff00]/70 italic mb-2 font-mono">
-            {Array.from(typingUsers).map(addr => 
+          <div className="text-sm text-[#2bbd2b]/70 italic mb-2 font-mono">
+            {Array.from(typingUsers).map(addr =>
               shortenAddress(addr)
             ).join(", ")} {typingUsers.size === 1 ? 'is' : 'are'} typing...
           </div>
@@ -300,19 +300,19 @@ export default function ChatInterface({
         <div ref={messagesEndRef} />
       </ScrollArea>
 
-      <div className="p-4 border-t border-[#00ff00]/30 flex gap-2">
+      <div className="p-4 border-t border-[#2bbd2b]/30 flex gap-2">
         <div className="flex-1 flex gap-2">
           <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-[#00ff00] hover:bg-[#00ff00]/10"
+                className="text-[#2bbd2b] hover:bg-[#2bbd2b]/10"
               >
                 <Smile className="h-5 w-5" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="p-0 border-none shadow-lg shadow-[#00ff00]/20">
+            <PopoverContent className="p-0 border-none shadow-lg shadow-[#2bbd2b]/20">
               <Picker
                 data={data}
                 onEmojiSelect={handleEmojiSelect}
@@ -329,13 +329,13 @@ export default function ChatInterface({
             placeholder="Type a message..."
             onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
             disabled={!isConnected}
-            className="bg-[#00ff00]/10 border-[#00ff00]/20 text-[#00ff00] placeholder-[#00ff00]/50 focus:border-[#00ff00]/50"
+            className="bg-[#2bbd2b]/10 border-[#2bbd2b]/20 text-[#2bbd2b] placeholder-[#2bbd2b]/50 focus:border-[#2bbd2b]/50"
           />
         </div>
         <Button
           onClick={sendMessage}
           disabled={!isConnected}
-          className="bg-[#00ff00] hover:bg-[#00ff00] text-white shadow-lg shadow-[#00ff00]/20"
+          className="bg-[#2bbd2b] hover:bg-[#2bbd2b] text-black shadow-lg shadow-[#2bbd2b]/20"
         >
           <Send className="h-4 w-4" />
         </Button>
