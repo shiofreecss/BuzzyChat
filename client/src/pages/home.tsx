@@ -120,7 +120,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-blue-100 flex flex-col">
+    <div className="min-h-screen bg-black text-[#00ff00] flex flex-col">
       <Header
         onConnect={handleConnect}
         onProfileClick={() => {
@@ -197,40 +197,39 @@ export default function Home() {
           </AnimatePresence>
         ) : (
           <div className="text-center py-20 space-y-8">
-            <h2 className="text-4xl font-bold text-blue-400 [text-shadow:_0_0_30px_rgb(96_165_250_/_20%)]">
+            <h2 className="text-4xl font-['Press_Start_2P'] text-[#00ff00] [text-shadow:_0_0_30px_rgb(0_255_0_/_20%)]">
               Welcome to Buzzy.Chat
             </h2>
             <div className="max-w-2xl mx-auto space-y-6">
-              <p className="text-xl text-blue-300">
-                A decentralized social chat platform powered by blockchain technology,
-                offering secure and seamless communication in the Web3 era.
+              <p className="text-xl font-['Press_Start_2P'] text-[#00ff00]/80">
+                A decentralized social chat platform powered by blockchain technology
               </p>
-              <div className="bg-blue-900/10 backdrop-blur-sm rounded-lg p-6 shadow-lg max-w-md mx-auto border border-blue-400/20">
+              <div className="bg-[#00ff00]/5 backdrop-blur-sm rounded-lg p-6 shadow-lg max-w-md mx-auto border border-[#00ff00]/20">
                 <ul className="text-left space-y-4">
-                  <li className="flex items-center gap-2 text-blue-300">
+                  <li className="flex items-center gap-2 text-[#00ff00]">
                     <span className="text-xl">🔒</span>
-                    <span>Secure wallet-based authentication</span>
+                    <span className="font-['Press_Start_2P'] text-xs">Secure wallet-based auth</span>
                   </li>
-                  <li className="flex items-center gap-2 text-blue-300">
+                  <li className="flex items-center gap-2 text-[#00ff00]">
                     <span className="text-xl">💬</span>
-                    <span>Real-time messaging with friends</span>
+                    <span className="font-['Press_Start_2P'] text-xs">Real-time messaging</span>
                   </li>
-                  <li className="flex items-center gap-2 text-blue-300">
+                  <li className="flex items-center gap-2 text-[#00ff00]">
                     <span className="text-xl">🌐</span>
-                    <span>Public chat channels</span>
+                    <span className="font-['Press_Start_2P'] text-xs">Public chat channels</span>
                   </li>
-                  <li className="flex items-center gap-2 text-blue-300">
+                  <li className="flex items-center gap-2 text-[#00ff00]">
                     <span className="text-xl">🤝</span>
-                    <span>Friend request system</span>
+                    <span className="font-['Press_Start_2P'] text-xs">Friend request system</span>
                   </li>
-                  <li className="flex items-center gap-2 text-blue-300">
+                  <li className="flex items-center gap-2 text-[#00ff00]">
                     <span className="text-xl">🎨</span>
-                    <span>Beautiful, responsive design</span>
+                    <span className="font-['Press_Start_2P'] text-xs">Retro gaming design</span>
                   </li>
                 </ul>
               </div>
-              <div className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500/10 rounded-full border border-blue-400/20 text-blue-400">
-                Connect your wallet to start chatting in this decentralized space
+              <div className="inline-flex items-center gap-2 px-6 py-3 bg-[#00ff00]/10 rounded-full border border-[#00ff00]/20 text-[#00ff00] font-['Press_Start_2P'] text-xs">
+                Connect wallet to start chatting
               </div>
             </div>
           </div>
