@@ -66,8 +66,8 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4 group`}>
       <Card className={`max-w-[80%] p-3 relative ${
         isOwn 
-          ? 'bg-[#073907] border-[#f4b43e]/30 shadow-lg shadow-[#f4b43e]/10' 
-          : 'bg-[#052505] border-[#f4b43e]/20'
+          ? 'bg-[#f4b43e]/10 border-[#f4b43e]/30 shadow-lg shadow-[#f4b43e]/10' 
+          : 'bg-[#f4b43e]/5 border-[#f4b43e]/20'
       }`}>
         <div className="text-sm font-mono mb-1 text-[#f4b43e] text-glow">
           {shortenAddress(message.fromAddress)}
@@ -90,7 +90,7 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
             {reactionCounts.map((reaction, index) => (
               <span 
                 key={index} 
-                className="bg-[#073907] border border-[#f4b43e]/20 rounded px-1.5 py-0.5 text-sm text-[#f4b43e]"
+                className="bg-[#f4b43e]/5 border border-[#f4b43e]/20 rounded px-1.5 py-0.5 text-sm text-[#f4b43e]"
               >
                 {reaction.emoji} {reaction.count}
               </span>
