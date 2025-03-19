@@ -39,12 +39,14 @@ export default function WalletConnect({
       toast({
         title: "Wallet Connected",
         description: `Successfully connected to ${walletType === 'metamask' ? 'MetaMask' : 'Coinbase Wallet'}`,
+        duration: 3000,
       });
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Connection Failed",
         description: (error as Error).message,
+        duration: 3000,
       });
     } finally {
       setConnecting(false);

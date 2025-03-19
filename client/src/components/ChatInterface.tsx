@@ -81,6 +81,7 @@ export default function ChatInterface({
       toast({
         title: "Connected",
         description: "Chat connection established",
+        duration: 3000, // Auto-hide after 3 seconds
       });
     };
 
@@ -113,6 +114,7 @@ export default function ChatInterface({
               variant: "destructive",
               title: "Message Error",
               description: data.error,
+              duration: 3000, // Added duration
             });
             return;
           }
@@ -131,6 +133,7 @@ export default function ChatInterface({
         variant: "destructive",
         title: "Connection Error",
         description: "Failed to connect to chat server",
+        duration: 3000,
       });
     };
 
@@ -165,9 +168,11 @@ export default function ChatInterface({
     if (!newMessage.trim() || !socketRef.current || !isConnected) return;
 
     const message = {
-      content: newMessage,
+      type: 'message',  // Add message type
+      content: newMessage.trim(),
       fromAddress: address,
-      toAddress: selectedUser?.address,
+      toAddress: selectedUser?.address || null,
+      timestamp: new Date().toISOString()
     };
 
     console.log("Sending message:", message);
@@ -182,12 +187,14 @@ export default function ChatInterface({
       toast({
         title: "Chat Cleared",
         description: "All messages have been cleared",
+        duration: 3000, // Added duration
       });
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to clear messages",
+        duration: 3000, // Added duration
       });
     }
   };
@@ -209,11 +216,11 @@ export default function ChatInterface({
   // Filter messages based on the selected chat mode (public or private)
   const filteredMessages = selectedUser
     ? messages.filter(msg =>
-        msg && msg.fromAddress && msg.toAddress && (
-          (msg.fromAddress === address && msg.toAddress === selectedUser.address) ||
-          (msg.fromAddress === selectedUser.address && msg.toAddress === address)
-        )
+      msg && msg.fromAddress && msg.toAddress && (
+        (msg.fromAddress === address && msg.toAddress === selectedUser.address) ||
+        (msg.fromAddress === selectedUser.address && msg.toAddress === address)
       )
+    )
     : messages.filter(msg => msg && !msg.toAddress);
 
   const handleEmojiSelect = (emoji: any) => {
@@ -226,6 +233,7 @@ export default function ChatInterface({
     toast({
       title: "Reaction Added",
       description: `Added reaction ${emoji} to message`,
+      duration: 3000, // Added duration
     });
   };
 

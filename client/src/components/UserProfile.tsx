@@ -57,6 +57,7 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated",
+        duration: 3000,
       });
       setIsEditing(false);
     } catch (error) {
@@ -64,6 +65,7 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
         variant: "destructive",
         title: "Update Failed",
         description: (error as Error).message,
+        duration: 3000,
       });
     } finally {
       setIsSubmitting(false);
@@ -97,8 +99,8 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
     <Card className="w-full max-w-md mx-auto bg-black border border-[#f4b43e]">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={onBack}
             className="p-0 hover:bg-transparent text-[#f4b43e] hover:text-[#f4b43e]/80"
           >
@@ -141,9 +143,9 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
               <Button type="submit" disabled={isSubmitting} className="retro-button text-xs">
                 {isSubmitting ? "Saving..." : "Save Changes"}
               </Button>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => setIsEditing(false)}
                 disabled={isSubmitting}
                 className="retro-button text-xs bg-transparent"
