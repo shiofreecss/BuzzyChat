@@ -118,39 +118,39 @@ export default function Home() {
           )
         ) : (
           <div className="text-center py-20 space-y-8">
-            <h2 className="text-4xl font-bold bg-gradient-to-r from-primary/80 to-primary bg-clip-text text-transparent">
+            <h2 className="text-4xl font-bold text-blue-600">
               Welcome to Buzzy.Chat
             </h2>
             <div className="max-w-2xl mx-auto space-y-6">
-              <p className="text-xl text-foreground/80">
+              <p className="text-xl text-blue-800">
                 A decentralized social chat platform powered by blockchain technology,
                 offering secure and seamless communication in the Web3 era.
               </p>
-              <div className="bg-card rounded-lg p-6 shadow-lg max-w-md mx-auto">
+              <div className="bg-white rounded-lg p-6 shadow-lg max-w-md mx-auto border border-blue-100">
                 <ul className="text-left space-y-4">
-                  <li className="flex items-center gap-2 text-foreground">
+                  <li className="flex items-center gap-2 text-blue-700">
                     <span className="text-xl">🔒</span>
                     <span>Secure wallet-based authentication</span>
                   </li>
-                  <li className="flex items-center gap-2 text-foreground">
+                  <li className="flex items-center gap-2 text-blue-700">
                     <span className="text-xl">💬</span>
                     <span>Real-time messaging with friends</span>
                   </li>
-                  <li className="flex items-center gap-2 text-foreground">
+                  <li className="flex items-center gap-2 text-blue-700">
                     <span className="text-xl">🌐</span>
                     <span>Public chat channels</span>
                   </li>
-                  <li className="flex items-center gap-2 text-foreground">
+                  <li className="flex items-center gap-2 text-blue-700">
                     <span className="text-xl">🤝</span>
                     <span>Friend request system</span>
                   </li>
-                  <li className="flex items-center gap-2 text-foreground">
+                  <li className="flex items-center gap-2 text-blue-700">
                     <span className="text-xl">🎨</span>
                     <span>Beautiful, responsive design</span>
                   </li>
                 </ul>
               </div>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-lg text-blue-600">
                 Connect your wallet to start chatting in this decentralized space
               </p>
             </div>
