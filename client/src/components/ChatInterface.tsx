@@ -65,90 +65,91 @@ export default function ChatInterface({
     scrollToBottom();
   }, [messages]);
 
-  const connectWebSocket = () => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) return;
+  useEffect(() => {
+    const connectWebSocket = () => {
+      if (socketRef.current?.readyState === WebSocket.OPEN) return;
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
 
-    console.log("Attempting WebSocket connection to:", wsUrl);
-    socketRef.current = new WebSocket(wsUrl);
+      socketRef.current = new WebSocket(wsUrl);
 
-    socketRef.current.onopen = () => {
-      console.log("WebSocket connection established");
-      setIsConnected(true);
-      setIsReconnecting(false);
-      toast({
-        title: "Connected",
-        description: "Chat connection established",
-      });
-    };
-
-    socketRef.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        if (data.type === 'typing') {
-          setTypingUsers(prev => {
-            const newSet = new Set(prev);
-            newSet.add(data.fromAddress);
-            return newSet;
+      socketRef.current.onopen = () => {
+        setIsConnected(true);
+        setIsReconnecting(false);
+        // Only show toast on initial connection or after a failed connection
+        if (!isConnected) {
+          toast({
+            title: "Connected",
+            description: "Chat connection established",
           });
+        }
+      };
 
-          // Clear typing indicator after 3 seconds
-          if (typingTimeoutRef.current) {
-            clearTimeout(typingTimeoutRef.current);
-          }
-          typingTimeoutRef.current = setTimeout(() => {
+      socketRef.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+
+          if (data.type === 'typing') {
             setTypingUsers(prev => {
               const newSet = new Set(prev);
-              newSet.delete(data.fromAddress);
+              newSet.add(data.fromAddress);
               return newSet;
             });
-          }, 3000);
-        } else {
-          // Handle regular messages
-          if (data.error) {
-            toast({
-              variant: "destructive",
-              title: "Message Error",
-              description: data.error,
-            });
-            return;
+
+            // Clear typing indicator after 3 seconds
+            if (typingTimeoutRef.current) {
+              clearTimeout(typingTimeoutRef.current);
+            }
+            typingTimeoutRef.current = setTimeout(() => {
+              setTypingUsers(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(data.fromAddress);
+                return newSet;
+              });
+            }, 3000);
+          } else {
+            // Handle regular messages
+            if (data.error) {
+              toast({
+                variant: "destructive",
+                title: "Message Error",
+                description: data.error,
+              });
+              return;
+            }
+            if (!data.connected) {
+              setMessages(prev => [...prev, data]);
+            }
           }
-          if (!data.connected) {
-            setMessages(prev => [...prev, data]);
+        } catch (error) {
+          console.error("Failed to parse message:", error);
+        }
+      };
+
+      socketRef.current.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        toast({
+          variant: "destructive",
+          title: "Connection Error",
+          description: "Failed to connect to chat server",
+        });
+      };
+
+      socketRef.current.onclose = () => {
+        if (isConnected) {
+          setIsConnected(false);
+          if (!isReconnecting) {
+            setIsReconnecting(true);
+            // Only attempt to reconnect if we were previously connected
+            reconnectTimeoutRef.current = setTimeout(() => {
+              connectWebSocket();
+            }, 5000);
           }
         }
-      } catch (error) {
-        console.error("Failed to parse message:", error);
-      }
+      };
     };
 
-    socketRef.current.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      toast({
-        variant: "destructive",
-        title: "Connection Error",
-        description: "Failed to connect to chat server",
-      });
-    };
-
-    socketRef.current.onclose = () => {
-      console.log("WebSocket connection closed");
-      setIsConnected(false);
-
-      if (!isReconnecting) {
-        setIsReconnecting(true);
-        reconnectTimeoutRef.current = setTimeout(() => {
-          console.log("Attempting to reconnect...");
-          connectWebSocket();
-        }, 5000);
-      }
-    };
-  };
-
-  useEffect(() => {
     connectWebSocket();
 
     return () => {
@@ -159,7 +160,8 @@ export default function ChatInterface({
         socketRef.current.close();
       }
     };
-  }, []);
+  }, [isConnected, isReconnecting]);
+
 
   const sendMessage = () => {
     if (!newMessage.trim() || !socketRef.current || !isConnected) return;
@@ -209,11 +211,11 @@ export default function ChatInterface({
   // Filter messages based on the selected chat mode (public or private)
   const filteredMessages = selectedUser
     ? messages.filter(msg =>
-        msg && msg.fromAddress && msg.toAddress && (
-          (msg.fromAddress === address && msg.toAddress === selectedUser.address) ||
-          (msg.fromAddress === selectedUser.address && msg.toAddress === address)
-        )
+      msg && msg.fromAddress && msg.toAddress && (
+        (msg.fromAddress === address && msg.toAddress === selectedUser.address) ||
+        (msg.fromAddress === selectedUser.address && msg.toAddress === address)
       )
+    )
     : messages.filter(msg => msg && !msg.toAddress);
 
   const handleEmojiSelect = (emoji: any) => {
@@ -238,10 +240,9 @@ export default function ChatInterface({
     sendTypingStatus();
   };
 
-
   return (
     <Card className="h-full flex flex-col bg-black border border-[#2bbd2b]">
-      <div className="p-4 border-b border-[#2bbd2b]/30 flex justify-between items-center">
+      <div className="p-3 border-b border-[#2bbd2b]/30 flex justify-between items-center">
         <div className="flex items-center gap-3">
           {showBackButton && (
             <Button
@@ -282,8 +283,8 @@ export default function ChatInterface({
         </div>
       </div>
 
-      <ScrollArea className="flex-1 px-4">
-        <div className="py-4 space-y-4">
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-4">
           {filteredMessages.map((msg) => (
             <ChatMessage
               key={msg.id}
@@ -302,7 +303,7 @@ export default function ChatInterface({
         </div>
       </ScrollArea>
 
-      <div className="p-4 border-t border-[#2bbd2b]/30 flex gap-2">
+      <div className="p-3 border-t border-[#2bbd2b]/30 flex gap-2">
         <div className="flex-1 flex gap-2">
           <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
             <PopoverTrigger asChild>
