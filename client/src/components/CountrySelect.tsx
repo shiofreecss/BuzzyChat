@@ -32,8 +32,31 @@ const countries = [
   { label: "Italy", value: "IT" },
   { label: "Russia", value: "RU" },
   { label: "Vietnam", value: "VN" },
-  // Thêm các quốc gia khác ở đây...
-];
+  { label: "Thailand", value: "TH" },
+  { label: "Singapore", value: "SG" },
+  { label: "Malaysia", value: "MY" },
+  { label: "Indonesia", value: "ID" },
+  { label: "Philippines", value: "PH" },
+  { label: "Netherlands", value: "NL" },
+  { label: "Sweden", value: "SE" },
+  { label: "Norway", value: "NO" },
+  { label: "Denmark", value: "DK" },
+  { label: "Finland", value: "FI" },
+  { label: "Poland", value: "PL" },
+  { label: "Ukraine", value: "UA" },
+  { label: "Turkey", value: "TR" },
+  { label: "Saudi Arabia", value: "SA" },
+  { label: "UAE", value: "AE" },
+  { label: "Egypt", value: "EG" },
+  { label: "South Africa", value: "ZA" },
+  { label: "Nigeria", value: "NG" },
+  { label: "Kenya", value: "KE" },
+  { label: "Argentina", value: "AR" },
+  { label: "Chile", value: "CL" },
+  { label: "Colombia", value: "CO" },
+  { label: "Peru", value: "PE" },
+  { label: "New Zealand", value: "NZ" },
+].sort((a, b) => a.label.localeCompare(b.label));
 
 interface CountrySelectProps {
   onSelect: (country: string) => void;
