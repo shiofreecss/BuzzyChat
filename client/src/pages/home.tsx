@@ -132,7 +132,7 @@ export default function Home() {
         address={address}
       />
 
-      <main className="flex-1 container max-w-6xl mx-auto p-4">
+      <main className="flex-1 container max-w-6xl mx-auto p-4 sm:p-6">
         {address ? (
           <AnimatePresence mode="wait" custom={direction}>
             {showProfile ? (
@@ -151,7 +151,7 @@ export default function Home() {
                 />
               </motion.div>
             ) : (
-              <div className="flex flex-col md:flex-row gap-4 h-[calc(100vh-12rem)]">
+              <div className="flex flex-col md:flex-row gap-4">
                 <AnimatePresence mode="wait" custom={direction}>
                   {(!selectedUser || !isMobile) && (
                     <motion.div
