@@ -1,15 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from "@/hooks/use-toast";
 import { Send, Trash2, Smile, ArrowLeft } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import type { Message, User } from "@shared/schema";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import ThemeCustomizer, { type ChatTheme } from "./ThemeCustomizer";
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 import {
@@ -17,6 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatInterfaceProps {
   address: string;
@@ -46,11 +45,7 @@ export default function ChatInterface({
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [chatTheme, setChatTheme] = useState<ChatTheme>({
-    primary: "#7c3aed",
-    secondary: "#1f2937",
-    background: "#111827",
-  });
+
 
   const { data: initialMessages = [] } = useQuery<Message[]>({
     queryKey: ['/api/messages'],
@@ -245,20 +240,20 @@ export default function ChatInterface({
 
 
   return (
-    <Card className="flex-1 h-[calc(100vh-8rem)] sm:h-[600px] flex flex-col bg-card">
-      <div className="p-4 border-b border-gray-800 flex justify-between items-center">
+    <Card className="flex-1 h-[calc(100vh-8rem)] sm:h-[600px] flex flex-col bg-black border border-blue-900/10">
+      <div className="p-4 border-b border-blue-900/10 flex justify-between items-center">
         <div className="flex items-center gap-3">
           {showBackButton && (
             <Button
               variant="ghost"
               size="icon"
               onClick={() => onSelectUser?.(undefined)}
-              className="md:hidden"
+              className="md:hidden hover:bg-blue-500/10 text-blue-400"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
-          <h2 className="text-lg font-semibold text-gray-100">
+          <h2 className="text-lg font-semibold text-blue-400">
             {selectedUser
               ? `Chat with ${selectedUser.username || shortenAddress(selectedUser.address)}`
               : "Public Chat"
@@ -269,20 +264,18 @@ export default function ChatInterface({
               variant="outline"
               size="sm"
               onClick={() => onSelectUser?.(undefined)}
-              className="text-xs hidden md:inline-flex"
-              style={{ backgroundColor: chatTheme.secondary }}
+              className="text-xs hidden md:inline-flex border-blue-400/20 text-blue-400 hover:bg-blue-500/10"
             >
               Return to Public Chat
             </Button>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <ThemeCustomizer onThemeChange={setChatTheme} currentTheme={chatTheme} />
           <Button
             variant="ghost"
             size="icon"
             onClick={clearMessages}
-            className="text-gray-400 hover:text-red-400"
+            className="text-blue-400 hover:bg-blue-500/10"
           >
             <Trash2 className="h-5 w-5" />
           </Button>
@@ -298,7 +291,7 @@ export default function ChatInterface({
           />
         ))}
         {typingUsers.size > 0 && (
-          <div className="text-sm text-muted-foreground italic mb-2">
+          <div className="text-sm text-blue-400/70 italic mb-2">
             {Array.from(typingUsers).map(addr => 
               shortenAddress(addr)
             ).join(", ")} {typingUsers.size === 1 ? 'is' : 'are'} typing...
@@ -307,19 +300,19 @@ export default function ChatInterface({
         <div ref={messagesEndRef} />
       </ScrollArea>
 
-      <div className="p-4 border-t border-gray-800 flex gap-2">
+      <div className="p-4 border-t border-blue-900/10 flex gap-2">
         <div className="flex-1 flex gap-2">
           <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-gray-400 hover:text-gray-300"
+                className="text-blue-400 hover:bg-blue-500/10"
               >
                 <Smile className="h-5 w-5" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="p-0 border-none">
+            <PopoverContent className="p-0 border-none shadow-lg shadow-blue-500/20">
               <Picker
                 data={data}
                 onEmojiSelect={handleEmojiSelect}
@@ -336,13 +329,13 @@ export default function ChatInterface({
             placeholder="Type a message..."
             onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
             disabled={!isConnected}
-            className="bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400"
+            className="bg-blue-900/10 border-blue-400/20 text-blue-100 placeholder-blue-400/50 focus:border-blue-400/50"
           />
         </div>
         <Button
           onClick={sendMessage}
           disabled={!isConnected}
-          className="bg-purple-600 hover:bg-purple-700 text-white"
+          className="bg-blue-500 hover:bg-blue-600 text-white shadow-lg shadow-blue-500/20"
         >
           <Send className="h-4 w-4" />
         </Button>
