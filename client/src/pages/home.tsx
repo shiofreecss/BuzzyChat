@@ -116,8 +116,11 @@ export default function Home() {
 
   // In the public chat button click handler in the ChatList component
   const handlePublicChat = () => {
-    handleSelectUser(null); // This will set selectedUser to undefined
-    // The chat interface will show public chat when selectedUser is undefined
+    setSelectedUser(undefined);
+    if (isMobile) {
+      setPage([1, 1]); // Animate forward
+      setLocation('/chat');
+    }
   };
 
   const handleBackFromProfile = () => {
