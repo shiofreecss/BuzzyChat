@@ -240,7 +240,7 @@ export default function ChatInterface({
 
 
   return (
-    <Card className="flex-1 h-full flex flex-col bg-black border border-[#2bbd2b]">
+    <Card className="h-full flex flex-col bg-black border border-[#2bbd2b]">
       <div className="p-4 border-b border-[#2bbd2b]/30 flex justify-between items-center">
         <div className="flex items-center gap-3">
           {showBackButton && (
@@ -282,22 +282,24 @@ export default function ChatInterface({
         </div>
       </div>
 
-      <ScrollArea className="flex-1 p-4">
-        {filteredMessages.map((msg) => (
-          <ChatMessage
-            key={msg.id}
-            message={msg}
-            isOwn={msg.fromAddress === address}
-          />
-        ))}
-        {typingUsers.size > 0 && (
-          <div className="text-sm text-[#2bbd2b]/70 italic mb-2 font-mono">
-            {Array.from(typingUsers).map(addr =>
-              shortenAddress(addr)
-            ).join(", ")} {typingUsers.size === 1 ? 'is' : 'are'} typing...
-          </div>
-        )}
-        <div ref={messagesEndRef} />
+      <ScrollArea className="flex-1 px-4">
+        <div className="py-4 space-y-4">
+          {filteredMessages.map((msg) => (
+            <ChatMessage
+              key={msg.id}
+              message={msg}
+              isOwn={msg.fromAddress === address}
+            />
+          ))}
+          {typingUsers.size > 0 && (
+            <div className="text-sm text-[#2bbd2b]/70 italic mb-2 font-mono">
+              {Array.from(typingUsers).map(addr =>
+                shortenAddress(addr)
+              ).join(", ")} {typingUsers.size === 1 ? 'is' : 'are'} typing...
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
       </ScrollArea>
 
       <div className="p-4 border-t border-[#2bbd2b]/30 flex gap-2">

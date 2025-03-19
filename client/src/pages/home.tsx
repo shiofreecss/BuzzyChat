@@ -119,6 +119,8 @@ export default function Home() {
     setPage([0, -1]); // Animate backward
   };
 
+  const onPublicChat = () => handleSelectUser(null); //Added this line based on the edited snippet.  It was implicit.
+
   return (
     <div className="min-h-screen bg-black text-[#2bbd2b] flex flex-col">
       <Header
@@ -151,7 +153,7 @@ export default function Home() {
                 />
               </motion.div>
             ) : (
-              <div className="flex-1 flex flex-col md:flex-row gap-6 min-h-[calc(100vh-12rem)]">
+              <div className="flex-1 flex flex-col md:flex-row gap-4 max-h-[calc(100vh-16rem)]">
                 <AnimatePresence mode="wait" custom={direction}>
                   {(!selectedUser || !isMobile) && (
                     <motion.div
@@ -162,11 +164,12 @@ export default function Home() {
                       animate="center"
                       exit={isMobile ? "exit" : false}
                       transition={pageTransition}
+                      className="md:w-80 flex-shrink-0"
                     >
                       <ChatList 
                         currentAddress={address} 
                         onSelectUser={handleSelectUser}
-                        onPublicChat={() => handleSelectUser(null)}
+                        onPublicChat={onPublicChat}
                         selectedUser={selectedUser}
                       />
                     </motion.div>
@@ -180,7 +183,7 @@ export default function Home() {
                       animate="center"
                       exit={isMobile ? "exit" : false}
                       transition={pageTransition}
-                      className="flex-1"
+                      className="flex-1 min-w-0"
                     >
                       <ChatInterface 
                         address={address}
