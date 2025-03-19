@@ -3,8 +3,27 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertUserSchema, insertMessageSchema, updateUserSchema, insertFriendRequestSchema } from "@shared/schema";
-import { insertReactionSchema } from "@shared/schema"; // Assuming this schema is defined
+import { insertReactionSchema } from "@shared/schema";
+import { z } from "zod";
 
+// Define a schema for typing status messages
+const typingStatusSchema = z.object({
+  type: z.literal('typing'),
+  fromAddress: z.string(),
+  toAddress: z.string().nullable(),
+});
+
+// Define a schema for WebSocket messages
+const wsMessageSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal('message'),
+    content: z.string(),
+    fromAddress: z.string(),
+    toAddress: z.string().nullable(),
+    timestamp: z.string(),
+  }),
+  typingStatusSchema,
+]);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -19,7 +38,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ws.on('message', async (data) => {
       try {
         const message = JSON.parse(data.toString());
-        const validatedMessage = insertMessageSchema.parse(message);
+        const validatedMessage = wsMessageSchema.parse(message);
+
+        if (validatedMessage.type === 'typing') {
+          // Handle typing status
+          const broadcastData = JSON.stringify(validatedMessage);
+          if (validatedMessage.toAddress) {
+            const recipientWs = clients.get(validatedMessage.toAddress);
+            if (recipientWs?.readyState === WebSocket.OPEN) {
+              recipientWs.send(broadcastData);
+            }
+          }
+          return;
+        }
 
         // Store the client's address for future reference
         if (!clientAddress) {
@@ -27,7 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           clients.set(clientAddress, ws);
         }
 
-        // Check if this is a private message and if users are friends
+        // For chat messages, check friendship and store the message
         if (validatedMessage.toAddress) {
           const areFriends = await storage.checkFriendship(
             validatedMessage.fromAddress,
@@ -76,7 +107,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Send a welcome message
     ws.send(JSON.stringify({ 
-      connected: true,
+      type: 'system',
+      message: 'connected',
       timestamp: new Date().toISOString()
     }));
   });

@@ -89,6 +89,16 @@ export default function ChatInterface({
       try {
         const data = JSON.parse(event.data);
 
+        // Handle system messages (like connection status)
+        if (data.type === 'system' && data.message === 'connected') {
+          toast({
+            title: "Connected",
+            description: "Chat connection established",
+            duration: 3000,
+          });
+          return;
+        }
+
         if (data.type === 'typing') {
           setTypingUsers(prev => {
             const newSet = new Set(prev);
@@ -107,20 +117,22 @@ export default function ChatInterface({
               return newSet;
             });
           }, 3000);
-        } else {
-          // Handle regular messages
-          if (data.error) {
-            toast({
-              variant: "destructive",
-              title: "Message Error",
-              description: data.error,
-              duration: 3000, // Added duration
-            });
-            return;
-          }
-          if (!data.connected) {
-            setMessages(prev => [...prev, data]);
-          }
+          return;
+        }
+
+        // Handle regular messages and errors
+        if (data.error) {
+          toast({
+            variant: "destructive",
+            title: "Message Error",
+            description: data.error,
+            duration: 3000,
+          });
+          return;
+        }
+
+        if (!data.type || data.type === 'message') {
+          setMessages(prev => [...prev, data]);
         }
       } catch (error) {
         console.error("Failed to parse message:", error);
@@ -206,7 +218,7 @@ export default function ChatInterface({
         socketRef.current.send(JSON.stringify({
           type: 'typing',
           fromAddress: address,
-          toAddress: selectedUser?.address,
+          toAddress: selectedUser?.address || null,
         }));
         setLastTypingTime(now);
       }
