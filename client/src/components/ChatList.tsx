@@ -92,21 +92,21 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
 
   return (
     <Card className="w-full md:w-80 h-[calc(100vh-8rem)] sm:h-[600px] flex flex-col bg-black border border-[#F0B90B]">
-      <div className="p-4 border-b border-[#F0B90B]/30">
-        <div className="flex justify-between mb-3">
+      <div className="p-4 border-b border-[#F0B90B]/20">
+        <div className="flex items-center gap-2 mb-3">
           <Button
-            variant={viewMode === "friends" ? "default" : "outline"}
+            variant="ghost"
             size="sm"
             onClick={() => setViewMode("friends")}
-            className={`w-1/2 retro-button text-xs ${viewMode === "friends" ? 'bg-[#F0B90B] text-black' : ''}`}
+            className={`flex-1 h-8 retro-button text-xs ${viewMode === "friends" ? 'bg-[#F0B90B]/10' : ''}`}
           >
             Friends ({friends.length})
           </Button>
           <Button
-            variant={viewMode === "all" ? "default" : "outline"}
+            variant="ghost"
             size="sm"
             onClick={() => setViewMode("all")}
-            className={`w-1/2 retro-button text-xs ${viewMode === "all" ? 'bg-[#F0B90B] text-black' : ''}`}
+            className={`flex-1 h-8 retro-button text-xs ${viewMode === "all" ? 'bg-[#F0B90B]/10' : ''}`}
           >
             All Users
           </Button>
@@ -114,17 +114,17 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
         <div className="relative">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-[#F0B90B]/50" />
           <Input
-            placeholder={viewMode === "friends" ? "Search friends..." : "Search users..."}
+            placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 retro-input text-xs h-8"
+            className="pl-8 retro-input text-xs h-8 bg-[#F0B90B]/5"
           />
         </div>
       </div>
 
       <Button
         variant="ghost"
-        className={`m-4 flex items-center gap-2 retro-button text-xs ${!selectedUser ? 'bg-[#F0B90B] text-black' : ''}`}
+        className={`mx-4 mt-2 flex items-center gap-2 retro-button text-xs ${!selectedUser ? 'bg-[#F0B90B]/10' : ''}`}
         onClick={onPublicChat}
       >
         <Users className="h-4 w-4" />
@@ -132,34 +132,38 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
       </Button>
 
       {friendRequests.length > 0 && (
-        <div className="p-4 border-b border-[#F0B90B]/30 bg-[#F0B90B]/5">
+        <div className="mx-4 mt-2 p-2 rounded border border-[#F0B90B]/20 bg-[#F0B90B]/5">
           <h3 className="text-xs font-['Press_Start_2P'] mb-2 text-[#F0B90B]">
-            Friend Requests ({friendRequests.length})
+            Requests ({friendRequests.length})
           </h3>
-          {friendRequests.map((request) => (
-            <div key={request.id} className="flex items-center justify-between mb-2">
-              <span className="text-xs font-mono text-[#F0B90B]/80">
-                {shortenAddress(request.requestorAddress)}
-              </span>
-              <Button
-                size="sm"
-                onClick={() => acceptFriendRequest(request.id)}
-                className="retro-button text-xs h-7"
+          <div className="space-y-1">
+            {friendRequests.map((request) => (
+              <div key={request.id} 
+                className="flex items-center justify-between p-2 rounded hover:bg-[#F0B90B]/10 transition-colors"
               >
-                <UserCheck className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
+                <span className="text-xs font-mono text-[#F0B90B]">
+                  {shortenAddress(request.requestorAddress)}
+                </span>
+                <Button
+                  size="sm"
+                  onClick={() => acceptFriendRequest(request.id)}
+                  className="h-6 px-2 retro-button text-xs"
+                >
+                  <UserCheck className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      <ScrollArea className="flex-1">
-        <div className="p-4 space-y-2">
+      <ScrollArea className="flex-1 px-4">
+        <div className="space-y-1 py-2">
           {viewMode === "friends" ? (
             friends.length === 0 ? (
               <div className="text-center py-8 text-[#F0B90B]/70 font-['Press_Start_2P'] text-xs">
                 <p>No friends yet</p>
-                <p className="text-xs mt-2">Switch to "All Users" to add friends</p>
+                <p className="mt-2 text-[10px]">Switch to "All Users" to add friends</p>
               </div>
             ) : (
               friends
@@ -168,21 +172,24 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
                   friend.address.toLowerCase().includes(searchQuery.toLowerCase())
                 )
                 .map((friend) => (
-                  <div key={friend.id} className="flex items-center justify-between">
+                  <div 
+                    key={friend.id} 
+                    className={`group rounded transition-colors ${
+                      selectedUser?.id === friend.id ? 'bg-[#F0B90B]/10' : 'hover:bg-[#F0B90B]/5'
+                    }`}
+                  >
                     <Button
                       variant="ghost"
-                      className={`flex-1 justify-start gap-2 retro-button text-xs ${
-                        selectedUser?.id === friend.id ? 'bg-[#F0B90B] text-black' : ''
-                      }`}
+                      className="w-full justify-start gap-2 p-2 h-auto retro-button text-xs"
                       onClick={() => onSelectUser(friend)}
                     >
-                      <MessageSquare className="h-4 w-4" />
-                      <div className="text-left">
-                        <div className="font-['Press_Start_2P'] text-xs">
+                      <MessageSquare className="h-4 w-4 shrink-0" />
+                      <div className="text-left truncate">
+                        <div className="font-['Press_Start_2P'] text-xs truncate">
                           {friend.username || shortenAddress(friend.address)}
                         </div>
                         {friend.username && (
-                          <div className="text-[10px] font-mono opacity-70">
+                          <div className="text-[10px] font-mono opacity-70 truncate">
                             {shortenAddress(friend.address)}
                           </div>
                         )}
@@ -192,40 +199,49 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
                 ))
             )
           ) : (
-            filteredUsers.map((user) => (
-              <div key={user.id} className="flex items-center justify-between">
-                <Button
-                  variant="ghost"
-                  className={`flex-1 justify-start gap-2 retro-button text-xs ${
-                    selectedUser?.id === user.id ? 'bg-[#F0B90B] text-black' : ''
+            users
+              .filter(user =>
+                user.address !== currentAddress &&
+                (user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  user.address.toLowerCase().includes(searchQuery.toLowerCase()))
+              )
+              .map((user) => (
+                <div 
+                  key={user.id} 
+                  className={`group rounded flex items-center transition-colors ${
+                    selectedUser?.id === user.id ? 'bg-[#F0B90B]/10' : 'hover:bg-[#F0B90B]/5'
                   }`}
-                  onClick={() => isFriend(user.address) && onSelectUser(user)}
-                  disabled={!isFriend(user.address)}
                 >
-                  <MessageSquare className="h-4 w-4" />
-                  <div className="text-left">
-                    <div className="font-['Press_Start_2P'] text-xs">
-                      {user.username || shortenAddress(user.address)}
-                    </div>
-                    {user.username && (
-                      <div className="text-[10px] font-mono opacity-70">
-                        {shortenAddress(user.address)}
-                      </div>
-                    )}
-                  </div>
-                </Button>
-                {!isFriend(user.address) && !hasPendingRequest(user.address) && (
                   <Button
                     variant="ghost"
-                    size="icon"
-                    onClick={() => sendFriendRequest(user.address)}
-                    className="ml-2 retro-button h-7 w-7"
+                    className="flex-1 justify-start gap-2 p-2 h-auto retro-button text-xs"
+                    onClick={() => isFriend(user.address) && onSelectUser(user)}
+                    disabled={!isFriend(user.address)}
                   >
-                    <UserPlus className="h-4 w-4" />
+                    <MessageSquare className="h-4 w-4 shrink-0" />
+                    <div className="text-left truncate">
+                      <div className="font-['Press_Start_2P'] text-xs truncate">
+                        {user.username || shortenAddress(user.address)}
+                      </div>
+                      {user.username && (
+                        <div className="text-[10px] font-mono opacity-70 truncate">
+                          {shortenAddress(user.address)}
+                        </div>
+                      )}
+                    </div>
                   </Button>
-                )}
-              </div>
-            ))
+                  {!isFriend(user.address) && !hasPendingRequest(user.address) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => sendFriendRequest(user.address)}
+                      className="mr-2 h-6 w-6 retro-button"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))
           )}
         </div>
       </ScrollArea>
