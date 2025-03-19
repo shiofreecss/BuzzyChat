@@ -124,7 +124,7 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
 
       <Button
         variant="ghost"
-        className={`mx-4 mt-4 flex items-center gap-2 retro-button text-xs ${!selectedUser ? 'bg-[#2bbd2b] text-black' : ''}`}
+        className={`m-4 flex items-center gap-2 retro-button text-xs ${!selectedUser ? 'bg-[#2bbd2b] text-black' : ''}`}
         onClick={onPublicChat}
       >
         <Users className="h-4 w-4" />
@@ -132,7 +132,7 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
       </Button>
 
       {friendRequests.length > 0 && (
-        <div className="px-4 pt-4 border-b border-[#2bbd2b]/30 bg-[#2bbd2b]/5">
+        <div className="p-4 border-b border-[#2bbd2b]/30 bg-[#2bbd2b]/5">
           <h3 className="text-xs font-['Press_Start_2P'] mb-2 text-[#2bbd2b]">
             Friend Requests ({friendRequests.length})
           </h3>
@@ -153,8 +153,8 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
         </div>
       )}
 
-      <ScrollArea className="flex-1">
-        <div className="px-4 py-2 space-y-2">
+      <ScrollArea className="flex-1 py-2">
+        <div className="px-4 space-y-2">
           {viewMode === "friends" ? (
             friends.length === 0 ? (
               <div className="text-center py-8 text-[#2bbd2b]/70 font-['Press_Start_2P'] text-xs">

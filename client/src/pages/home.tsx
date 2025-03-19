@@ -160,7 +160,7 @@ export default function Home() {
                 />
               </motion.div>
             ) : (
-              <div className="flex-1 flex flex-col md:flex-row gap-4 h-[calc(100vh-10rem)] md:h-[calc(100vh-16rem)]">
+              <div className="flex-1 flex flex-col md:flex-row gap-4 h-[calc(100vh-16rem)]">
                 <AnimatePresence mode="popLayout" custom={direction}>
                   {(!isMobile || (isMobile && window.location.pathname === '/')) && (
                     <motion.div
@@ -171,7 +171,7 @@ export default function Home() {
                       animate="center"
                       exit="exit"
                       transition={pageTransition}
-                      className="h-full md:w-80 flex-shrink-0"
+                      className="md:w-80 flex-shrink-0"
                     >
                       <ChatList
                         currentAddress={address}
@@ -190,7 +190,7 @@ export default function Home() {
                       animate="center"
                       exit="exit"
                       transition={pageTransition}
-                      className="h-full flex-1 min-w-0"
+                      className="flex-1 min-w-0"
                     >
                       <ChatInterface
                         address={address}
