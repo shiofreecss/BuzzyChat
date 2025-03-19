@@ -40,8 +40,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const message = JSON.parse(data.toString());
         const validatedMessage = wsMessageSchema.parse(message);
 
+        // Store the client's address for future reference
+        if (!clientAddress) {
+          clientAddress = validatedMessage.fromAddress;
+          clients.set(clientAddress, ws);
+        }
+
+        // Handle typing status messages
         if (validatedMessage.type === 'typing') {
-          // Handle typing status
           const broadcastData = JSON.stringify(validatedMessage);
           if (validatedMessage.toAddress) {
             const recipientWs = clients.get(validatedMessage.toAddress);
@@ -50,12 +56,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
           return;
-        }
-
-        // Store the client's address for future reference
-        if (!clientAddress) {
-          clientAddress = validatedMessage.fromAddress;
-          clients.set(clientAddress, ws);
         }
 
         // For chat messages, check friendship and store the message
@@ -73,7 +73,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        const savedMessage = await storage.addMessage(validatedMessage);
+        // Store the message in the database
+        const savedMessage = await storage.addMessage({
+          content: validatedMessage.content,
+          fromAddress: validatedMessage.fromAddress,
+          toAddress: validatedMessage.toAddress,
+          timestamp: new Date(validatedMessage.timestamp)
+        });
 
         // Broadcast message based on type (private or public)
         const broadcastData = JSON.stringify(savedMessage);
