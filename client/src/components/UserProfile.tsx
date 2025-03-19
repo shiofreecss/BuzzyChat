@@ -80,13 +80,13 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
 
   if (isLoading) {
     return (
-      <Card className="w-full max-w-md mx-auto bg-black border border-[#2bbd2b]">
+      <Card className="w-full max-w-md mx-auto bg-black border border-[#f4b43e]">
         <CardContent className="p-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-[#2bbd2b]/10 rounded w-1/4"></div>
-            <div className="h-8 bg-[#2bbd2b]/10 rounded"></div>
-            <div className="h-4 bg-[#2bbd2b]/10 rounded w-1/4"></div>
-            <div className="h-8 bg-[#2bbd2b]/10 rounded"></div>
+            <div className="h-4 bg-[#f4b43e]/10 rounded w-1/4"></div>
+            <div className="h-8 bg-[#f4b43e]/10 rounded"></div>
+            <div className="h-4 bg-[#f4b43e]/10 rounded w-1/4"></div>
+            <div className="h-8 bg-[#f4b43e]/10 rounded"></div>
           </div>
         </CardContent>
       </Card>
@@ -94,17 +94,17 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto bg-black border border-[#2bbd2b]">
+    <Card className="w-full max-w-md mx-auto bg-black border border-[#f4b43e]">
       <CardHeader>
         <div className="flex items-center justify-between">
           <Button 
             variant="ghost" 
             onClick={onBack}
-            className="p-0 hover:bg-transparent text-[#2bbd2b] hover:text-[#2bbd2b]/80"
+            className="p-0 hover:bg-transparent text-[#f4b43e] hover:text-[#f4b43e]/80"
           >
             <ArrowLeft className="h-6 w-6" />
           </Button>
-          <CardTitle className="flex-1 text-center font-['Press_Start_2P'] text-[#2bbd2b] text-sm sm:text-base">
+          <CardTitle className="flex-1 text-center font-mono text-[#f4b43e] text-sm sm:text-base uppercase tracking-wider">
             Profile Settings
           </CardTitle>
           {!isEditing && (
@@ -118,7 +118,7 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
         {isEditing ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label className="font-['Press_Start_2P'] text-xs text-[#2bbd2b]">Username</Label>
+              <Label className="font-mono text-xs text-[#f4b43e] uppercase">Username</Label>
               <Input
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -128,7 +128,7 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label className="font-['Press_Start_2P'] text-xs text-[#2bbd2b]">Nickname</Label>
+              <Label className="font-mono text-xs text-[#f4b43e] uppercase">Nickname</Label>
               <Input
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
@@ -155,20 +155,20 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
         ) : (
           <div className="space-y-4">
             <div>
-              <Label className="font-['Press_Start_2P'] text-xs text-[#2bbd2b]">Username</Label>
-              <p className="mt-1 font-mono text-[#2bbd2b]/80 text-sm">
+              <Label className="font-mono text-xs text-[#f4b43e] uppercase">Username</Label>
+              <p className="mt-1 font-mono text-[#f4b43e]/80 text-sm">
                 {user?.username || "Not set"}
               </p>
             </div>
             <div>
-              <Label className="font-['Press_Start_2P'] text-xs text-[#2bbd2b]">Nickname</Label>
-              <p className="mt-1 font-mono text-[#2bbd2b]/80 text-sm">
+              <Label className="font-mono text-xs text-[#f4b43e] uppercase">Nickname</Label>
+              <p className="mt-1 font-mono text-[#f4b43e]/80 text-sm">
                 {user?.nickname || "Not set"}
               </p>
             </div>
             <div>
-              <Label className="font-['Press_Start_2P'] text-xs text-[#2bbd2b]">Wallet Address</Label>
-              <p className="mt-1 font-mono text-[#2bbd2b]/80 text-xs break-all">
+              <Label className="font-mono text-xs text-[#f4b43e] uppercase">Wallet Address</Label>
+              <p className="mt-1 font-mono text-[#f4b43e]/80 text-xs break-all">
                 {address}
               </p>
             </div>
