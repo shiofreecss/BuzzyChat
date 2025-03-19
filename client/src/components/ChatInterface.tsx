@@ -78,11 +78,7 @@ export default function ChatInterface({
       console.log("WebSocket connection established");
       setIsConnected(true);
       setIsReconnecting(false);
-      toast({
-        title: "Connected",
-        description: "Chat connection established",
-        duration: 3000, // Auto-hide after 3 seconds
-      });
+      // Remove toast from here since we'll show it when receiving system message
     };
 
     socketRef.current.onmessage = (event) => {
@@ -122,12 +118,15 @@ export default function ChatInterface({
 
         // Handle regular messages and errors
         if (data.error) {
-          toast({
-            variant: "destructive",
-            title: "Message Error",
-            description: data.error,
-            duration: 3000,
-          });
+          // Only show error toast for non-typing related errors
+          if (!data.error.includes("Invalid message format")) {
+            toast({
+              variant: "destructive",
+              title: "Message Error",
+              description: data.error,
+              duration: 3000,
+            });
+          }
           return;
         }
 
