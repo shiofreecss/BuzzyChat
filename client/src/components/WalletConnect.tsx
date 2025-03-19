@@ -56,16 +56,16 @@ export default function WalletConnect({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button className="retro-button">
-            <Wallet className="mr-2 h-4 w-4" />
-            {shortenAddress(address!)}
+            <Wallet className="h-4 w-4" />
+            <span className="hidden sm:inline-block sm:ml-2">{shortenAddress(address!)}</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48 bg-black border border-[#00ff00] shadow-lg shadow-[#00ff00]/20">
-          <DropdownMenuItem onClick={onProfileClick} className="cursor-pointer text-[#00ff00] hover:bg-[#00ff00]/10 font-['Press_Start_2P'] text-xs">
+        <DropdownMenuContent align="end" className="w-48 bg-black border border-[#2bbd2b] shadow-lg shadow-[#2bbd2b]/20">
+          <DropdownMenuItem onClick={onProfileClick} className="cursor-pointer text-[#2bbd2b] hover:bg-[#2bbd2b]/10 font-['Press_Start_2P'] text-xs">
             <Settings className="mr-2 h-4 w-4" />
             Profile Settings
           </DropdownMenuItem>
-          <DropdownMenuSeparator className="bg-[#00ff00]/20" />
+          <DropdownMenuSeparator className="bg-[#2bbd2b]/20" />
           <DropdownMenuItem 
             onClick={onLogout}
             className="cursor-pointer text-red-500 hover:bg-red-500/10 font-['Press_Start_2P'] text-xs"
@@ -85,21 +85,23 @@ export default function WalletConnect({
           disabled={connecting}
           className="retro-button"
         >
-          <Wallet className="mr-2 h-4 w-4" />
-          {connecting ? "Connecting..." : "Connect Wallet"}
+          <Wallet className="h-4 w-4" />
+          <span className="hidden sm:inline-block sm:ml-2">
+            {connecting ? "Connecting..." : "Connect Wallet"}
+          </span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56 bg-black border border-[#00ff00] shadow-lg shadow-[#00ff00]/20">
+      <DropdownMenuContent className="w-56 bg-black border border-[#2bbd2b] shadow-lg shadow-[#2bbd2b]/20">
         <DropdownMenuItem 
           onClick={() => handleConnect('metamask')} 
-          className="flex items-center gap-2 py-2 cursor-pointer text-[#00ff00] hover:bg-[#00ff00]/10 font-['Press_Start_2P'] text-xs"
+          className="flex items-center gap-2 py-2 cursor-pointer text-[#2bbd2b] hover:bg-[#2bbd2b]/10 font-['Press_Start_2P'] text-xs"
         >
           <img src={MetaMaskLogo} alt="MetaMask" className="w-6 h-6" />
           <span>Connect MetaMask</span>
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => handleConnect('coinbase')} 
-          className="flex items-center gap-2 py-2 cursor-pointer text-[#00ff00] hover:bg-[#00ff00]/10 font-['Press_Start_2P'] text-xs"
+          className="flex items-center gap-2 py-2 cursor-pointer text-[#2bbd2b] hover:bg-[#2bbd2b]/10 font-['Press_Start_2P'] text-xs"
         >
           <img src={CoinbaseLogo} alt="Coinbase Wallet" className="w-6 h-6" />
           <span>Connect Coinbase</span>
