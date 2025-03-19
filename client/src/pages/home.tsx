@@ -131,7 +131,7 @@ export default function Home() {
   const showChatList = !isMobile || (isMobile && location === '/');
 
   return (
-    <div className="min-h-screen bg-black text-[#2bbd2b] flex flex-col">
+    <div className="min-h-screen bg-[#111111] text-[#f4b43e] flex flex-col">
       <Header
         onConnect={handleConnect}
         onProfileClick={() => {
@@ -208,22 +208,22 @@ export default function Home() {
           </AnimatePresence>
         ) : (
           <div className="text-center py-20 space-y-8">
-            <h2 className="text-4xl font-['Press_Start_2P'] text-[#2bbd2b] [text-shadow:_0_0_30px_rgb(0_255_0_/_20%)]">
+            <h2 className="text-4xl font-mono text-[#f4b43e] [text-shadow:_0_0_30px_rgb(244_180_62_/_20%)]">
               Welcome to Buzzy.Chat
             </h2>
             <div className="max-w-2xl mx-auto space-y-6">
-              <p className="text-xl font-['Press_Start_2P'] text-[#2bbd2b]/80">
+              <p className="text-xl font-mono text-[#f4b43e]/80">
                 Connect, Chat, Create.
               </p>
-              <div className="bg-[#2bbd2b]/5 backdrop-blur-sm rounded-lg p-6 shadow-lg max-w-md mx-auto border border-[#2bbd2b]/20">
+              <div className="bg-[#f4b43e]/5 backdrop-blur-sm rounded-lg p-6 shadow-lg max-w-md mx-auto border border-[#f4b43e]/20">
                 <div className="space-y-6">
                   <div className="text-center">
-                    <div className="inline-flex items-center gap-2 px-6 py-3 bg-[#2bbd2b]/10 rounded-full border border-[#2bbd2b]/20 text-[#2bbd2b] font-['Press_Start_2P'] text-xs">
+                    <div className="inline-flex items-center gap-2 px-6 py-3 bg-[#f4b43e]/10 rounded-full border border-[#f4b43e]/20 text-[#f4b43e] font-mono text-xs">
                       Connect wallet to start chatting
                     </div>
                   </div>
-                  <div className="h-px bg-[#2bbd2b]/20"></div>
-                  <div className="text-center font-['Press_Start_2P'] text-[#2bbd2b] text-xs space-y-4">
+                  <div className="h-px bg-[#f4b43e]/20"></div>
+                  <div className="text-center font-mono text-[#f4b43e] text-xs space-y-4">
                     <p>A decentralized chat platform</p>
                     <p>for web3 communities</p>
                   </div>

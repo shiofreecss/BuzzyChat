@@ -16,15 +16,15 @@
 
 @layer components {
   .retro-button {
-    @apply px-3 py-1.5 bg-[#1a1a1a] border border-[#2bbd2b] text-[#2bbd2b] font-mono text-xs uppercase tracking-wide;
-    text-shadow: 0 0 5px rgba(43, 189, 43, 0.3);
-    box-shadow: 0 0 8px rgba(43, 189, 43, 0.15);
+    @apply px-3 py-1.5 bg-[#1a1a1a] border border-[#f4b43e] text-[#f4b43e] font-mono text-xs uppercase tracking-wide;
+    text-shadow: 0 0 5px rgba(244, 180, 62, 0.3);
+    box-shadow: 0 0 8px rgba(244, 180, 62, 0.15);
     transition: all 0.2s ease;
   }
 
   .retro-button:hover {
-    @apply border-[#2bbd2b] text-[#2bbd2b];
-    box-shadow: 0 0 12px rgba(43, 189, 43, 0.3);
+    @apply border-[#f4b43e] text-[#f4b43e];
+    box-shadow: 0 0 12px rgba(244, 180, 62, 0.3);
     transform: translateY(-1px);
   }
 
@@ -33,26 +33,26 @@
   }
 
   .retro-input {
-    @apply bg-[#111] border border-[#2bbd2b] text-[#2bbd2b] font-mono px-3 py-1.5 text-xs;
-    box-shadow: inset 0 0 8px rgba(43, 189, 43, 0.1);
+    @apply bg-[#111] border border-[#f4b43e] text-[#f4b43e] font-mono px-3 py-1.5 text-xs;
+    box-shadow: inset 0 0 8px rgba(244, 180, 62, 0.1);
   }
 
   .retro-card {
-    @apply bg-[#111] border border-[#2bbd2b] shadow-lg;
-    box-shadow: 0 0 15px rgba(43, 189, 43, 0.1);
+    @apply bg-[#111] border border-[#f4b43e] shadow-lg;
+    box-shadow: 0 0 15px rgba(244, 180, 62, 0.1);
   }
 
   .retro-text {
-    @apply font-mono text-[#2bbd2b] tracking-wide uppercase;
-    text-shadow: 0 0 5px rgba(43, 189, 43, 0.2);
+    @apply font-mono text-[#f4b43e] tracking-wide uppercase;
+    text-shadow: 0 0 5px rgba(244, 180, 62, 0.2);
   }
 
   .retro-link {
-    @apply text-[#2bbd2b] hover:text-[#2bbd2b]/80 transition-colors font-mono text-xs uppercase;
-    text-shadow: 0 0 3px rgba(43, 189, 43, 0.2);
+    @apply text-[#f4b43e] hover:text-[#f4b43e]/80 transition-colors font-mono text-xs uppercase;
+    text-shadow: 0 0 3px rgba(244, 180, 62, 0.2);
   }
 
   .blur-gradient {
-    background: linear-gradient(180deg, rgba(43, 189, 43, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
+    background: linear-gradient(180deg, rgba(244, 180, 62, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
   }
 }
