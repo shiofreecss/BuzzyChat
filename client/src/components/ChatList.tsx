@@ -91,7 +91,7 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
   );
 
   return (
-    <Card className="w-full md:w-80 h-full flex flex-col bg-black border border-[#2bbd2b]">
+    <Card className="w-full md:w-80 h-[calc(100vh-8rem)] sm:h-[600px] flex flex-col bg-black border border-[#2bbd2b]">
       <div className="p-4 border-b border-[#2bbd2b]/30">
         <div className="flex justify-between mb-3">
           <Button
