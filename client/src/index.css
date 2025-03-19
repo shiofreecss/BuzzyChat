@@ -55,4 +55,8 @@
   .blur-gradient {
     background: linear-gradient(180deg, rgba(244, 180, 62, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
   }
+
+  .text-glow {
+    text-shadow: 0 0 10px rgba(244, 180, 62, 0.3);
+  }
 }
