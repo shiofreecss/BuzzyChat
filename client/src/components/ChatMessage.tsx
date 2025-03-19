@@ -66,16 +66,16 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4 group`}>
       <Card className={`max-w-[80%] p-3 relative ${
         isOwn 
-          ? 'bg-blue-500/20 border-blue-400/30 shadow-lg shadow-blue-500/10' 
-          : 'bg-blue-900/20 border-blue-900/30'
+          ? 'bg-[#00ff00]/20 border-[#00ff00]/30 shadow-lg shadow-[#00ff00]/10' 
+          : 'bg-[#00ff00]/10 border-[#00ff00]/20'
       }`}>
-        <div className="text-sm font-medium mb-1 text-blue-400">
+        <div className="text-sm font-['Press_Start_2P'] mb-1 text-[#00ff00]">
           {shortenAddress(message.fromAddress)}
         </div>
-        <div className="break-words text-blue-100">{message.content}</div>
+        <div className="break-words text-[#00ff00]">{message.content}</div>
 
         {/* Timestamp and Read Status */}
-        <div className="text-xs mt-2 text-blue-400/70 flex items-center gap-1">
+        <div className="text-xs mt-2 text-[#00ff00]/70 flex items-center gap-1 font-mono">
           {format(new Date(message.timestamp), 'HH:mm')}
           {isOwn && (
             <span className="ml-1">
@@ -90,7 +90,7 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
             {reactionCounts.map((reaction, index) => (
               <span 
                 key={index} 
-                className="bg-blue-500/10 border border-blue-400/20 rounded px-1.5 py-0.5 text-sm text-blue-300"
+                className="bg-[#00ff00]/10 border border-[#00ff00]/20 rounded px-1.5 py-0.5 text-sm text-[#00ff00]"
               >
                 {reaction.emoji} {reaction.count}
               </span>
@@ -104,12 +104,12 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
             <Button 
               variant="ghost" 
               size="icon"
-              className="opacity-0 group-hover:opacity-100 absolute -right-8 top-2 h-6 w-6 p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-all"
+              className="opacity-0 group-hover:opacity-100 absolute -right-8 top-2 h-6 w-6 p-1 text-[#00ff00] hover:text-[#00ff00] hover:bg-[#00ff00]/10 transition-all"
             >
               <PlusCircle className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="p-0 border-none shadow-lg shadow-blue-500/20">
+          <PopoverContent className="p-0 border-none shadow-lg shadow-[#00ff00]/20">
             <Picker 
               data={data} 
               onEmojiSelect={handleEmojiSelect}
