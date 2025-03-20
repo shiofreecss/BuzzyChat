@@ -30,26 +30,41 @@ const wsMessageSchema = z.discriminatedUnion("type", [
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
+  console.log("Creating WebSocket server on path: /ws");
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
 
   // Store connected clients with their addresses
   const clients = new Map<string, WebSocket>();
 
-  wss.on('connection', (ws) => {
+  wss.on('connection', (ws, req) => {
+    console.log(`New WebSocket connection from ${req.socket.remoteAddress}`);
     let clientAddress: string | undefined;
+
+    ws.on('error', (error) => {
+      console.error('WebSocket error occurred:', error);
+      // Log the client address if available
+      if (clientAddress) {
+        console.error(`Error for client ${clientAddress}:`, error);
+      }
+    });
 
     ws.on('message', async (data) => {
       try {
+        console.log('Received raw message:', data.toString());
         const message = JSON.parse(data.toString());
+        console.log('Parsed message:', message);
         const validatedMessage = wsMessageSchema.parse(message);
+        console.log('Validated message:', validatedMessage);
 
         // Store the client's address for future reference
         if (!clientAddress) {
           clientAddress = validatedMessage.fromAddress;
           clients.set(clientAddress, ws);
+          console.log(`Registered client with address: ${clientAddress}`);
           // Update user's online status
           try {
             await storage.updateOnlineStatus(clientAddress, true);
+            console.log(`Updated online status for ${clientAddress}`);
           } catch (error) {
             console.error("Failed to update online status:", error);
           }
@@ -57,11 +72,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Handle typing status messages
         if (validatedMessage.type === 'typing') {
+          console.log('Processing typing status:', validatedMessage);
           const broadcastData = JSON.stringify(validatedMessage);
           if (validatedMessage.toAddress) {
             const recipientWs = clients.get(validatedMessage.toAddress);
             if (recipientWs?.readyState === WebSocket.OPEN) {
               recipientWs.send(broadcastData);
+              console.log(`Sent typing status to ${validatedMessage.toAddress}`);
             }
           }
           return;
@@ -69,12 +86,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // For chat messages, check friendship and store the message
         if (validatedMessage.toAddress) {
+          console.log('Checking friendship between', validatedMessage.fromAddress, 'and', validatedMessage.toAddress);
           const areFriends = await storage.checkFriendship(
             validatedMessage.fromAddress,
             validatedMessage.toAddress
           );
 
           if (!areFriends) {
+            console.log('Friendship check failed, sending error');
             ws.send(JSON.stringify({ 
               error: "You can only send messages to users in your friends list" 
             }));
@@ -83,29 +102,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Store the message in the database
+        console.log('Storing message in database');
         const savedMessage = await storage.addMessage({
           content: validatedMessage.content,
           fromAddress: validatedMessage.fromAddress,
           toAddress: validatedMessage.toAddress
         });
+        console.log('Message stored:', savedMessage);
 
         // Broadcast message based on type (private or public)
         const broadcastData = JSON.stringify(savedMessage);
 
         if (validatedMessage.toAddress) {
           // Private message: send only to sender and recipient
+          console.log('Sending private message to recipient');
           const recipientWs = clients.get(validatedMessage.toAddress);
           if (recipientWs?.readyState === WebSocket.OPEN) {
             recipientWs.send(broadcastData);
+            console.log('Sent to recipient');
           }
           ws.send(broadcastData);
+          console.log('Sent to sender');
         } else {
           // Public message: broadcast to all connected clients
+          console.log('Broadcasting public message to all clients');
           clients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
               client.send(broadcastData);
             }
           });
+          console.log('Broadcast complete');
         }
       } catch (error) {
         console.error('WebSocket message error:', error);
@@ -114,23 +140,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     ws.on('close', async () => {
+      console.log(`WebSocket connection closed for ${clientAddress || 'unknown client'}`);
       if (clientAddress) {
         // Update user's offline status
         try {
           await storage.updateOnlineStatus(clientAddress, false);
+          console.log(`Updated offline status for ${clientAddress}`);
         } catch (error) {
           console.error("Failed to update offline status:", error);
         }
         clients.delete(clientAddress);
+        console.log(`Removed client ${clientAddress} from active clients`);
       }
     });
 
     // Send a welcome message
-    ws.send(JSON.stringify({ 
+    const welcomeMessage = JSON.stringify({ 
       type: 'system',
       message: 'connected',
       timestamp: new Date().toISOString()
-    }));
+    });
+    console.log('Sending welcome message:', welcomeMessage);
+    ws.send(welcomeMessage);
   });
 
   // Regular HTTP routes
