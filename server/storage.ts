@@ -51,7 +51,11 @@ export class DatabaseStorage implements IStorage {
         throw new Error("Username already taken");
       }
     }
-    const [user] = await db.insert(users).values(insertUser).returning();
+    const [user] = await db.insert(users).values({
+      ...insertUser,
+      isOnline: true,
+      lastSeen: new Date()
+    }).returning();
     console.log("createUser result:", user);
     return user;
   }
@@ -88,7 +92,11 @@ export class DatabaseStorage implements IStorage {
   async addMessage(insertMessage: InsertMessage): Promise<Message> {
     const [message] = await db
       .insert(messages)
-      .values(insertMessage)
+      .values({
+        ...insertMessage,
+        read: false,
+        timestamp: new Date()
+      })
       .returning();
     return message;
   }
