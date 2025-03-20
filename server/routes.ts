@@ -26,6 +26,10 @@ const wsMessageSchema = z.discriminatedUnion("type", [
     timestamp: z.string(),
   }),
   typingStatusSchema,
+  z.object({
+    type: z.literal('ping'),
+    timestamp: z.string(),
+  })
 ]);
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -36,13 +40,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Store connected clients with their addresses
   const clients = new Map<string, WebSocket>();
 
+  // Heartbeat interval
+  const HEARTBEAT_INTERVAL = 30000;
+  const HEARTBEAT_TIMEOUT = 35000;
+
+  function heartbeat(ws: WebSocket) {
+    const wsAny = ws as any;
+    wsAny.isAlive = true;
+  }
+
+  // Set up heartbeat interval
+  const interval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      const wsAny = ws as any;
+      if (wsAny.isAlive === false) {
+        console.log("Terminating inactive connection");
+        return ws.terminate();
+      }
+      wsAny.isAlive = false;
+      ws.ping();
+    });
+  }, HEARTBEAT_INTERVAL);
+
+  wss.on('close', () => {
+    clearInterval(interval);
+  });
+
   wss.on('connection', (ws, req) => {
     console.log(`New WebSocket connection from ${req.socket.remoteAddress}`);
     let clientAddress: string | undefined;
 
+    // Initialize heartbeat
+    const wsAny = ws as any;
+    wsAny.isAlive = true;
+    ws.on('pong', () => heartbeat(ws));
+
     ws.on('error', (error) => {
       console.error('WebSocket error occurred:', error);
-      // Log the client address if available
       if (clientAddress) {
         console.error(`Error for client ${clientAddress}:`, error);
       }
@@ -56,12 +90,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validatedMessage = wsMessageSchema.parse(message);
         console.log('Validated message:', validatedMessage);
 
+        if (validatedMessage.type === 'ping') {
+          ws.send(JSON.stringify({ type: 'pong', timestamp: new Date().toISOString() }));
+          return;
+        }
+
         // Store the client's address for future reference
         if (!clientAddress) {
           clientAddress = validatedMessage.fromAddress;
           clients.set(clientAddress, ws);
           console.log(`Registered client with address: ${clientAddress}`);
-          // Update user's online status
           try {
             await storage.updateOnlineStatus(clientAddress, true);
             console.log(`Updated online status for ${clientAddress}`);
@@ -126,7 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           // Public message: broadcast to all connected clients
           console.log('Broadcasting public message to all clients');
-          clients.forEach((client) => {
+          wss.clients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
               client.send(broadcastData);
             }
@@ -142,7 +180,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ws.on('close', async () => {
       console.log(`WebSocket connection closed for ${clientAddress || 'unknown client'}`);
       if (clientAddress) {
-        // Update user's offline status
         try {
           await storage.updateOnlineStatus(clientAddress, false);
           console.log(`Updated offline status for ${clientAddress}`);

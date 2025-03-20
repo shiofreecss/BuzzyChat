@@ -32,21 +32,18 @@ export default function ChatInterface({
   showBackButton = false,
   isPublicChat = false
 }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [allMessages, setAllMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isConnected, setIsConnected] = useState(false);
-  const [isReconnecting, setIsReconnecting] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [lastTypingTime, setLastTypingTime] = useState(0);
   const socketRef = useRef<WebSocket>();
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
-  const maxReconnectAttempts = 5;
-  const reconnectAttemptRef = useRef(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const pingIntervalRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
 
   const { data: initialMessages = [] } = useQuery<Message[]>({
     queryKey: ['/api/messages'],
@@ -58,141 +55,124 @@ export default function ChatInterface({
     }
   };
 
+  // Initialize messages from the query
   useEffect(() => {
-    setMessages(initialMessages.filter(msg => {
-      if (selectedUser) {
-        return (msg.fromAddress === address && msg.toAddress === selectedUser.address) ||
-               (msg.fromAddress === selectedUser.address && msg.toAddress === address);
-      }
-      return !msg.toAddress; // Public messages
-    }));
-  }, [initialMessages, selectedUser, address]);
+    setAllMessages(initialMessages);
+  }, [initialMessages]);
 
+  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [allMessages]);
 
-  const connectWebSocket = () => {
+  const setupWebSocket = () => {
     if (socketRef.current?.readyState === WebSocket.OPEN) return;
 
-    // More robust way to construct WebSocket URL
-    const wsUrl = window.location.origin.replace(/^http/, 'ws') + '/ws';
+    const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
+    socketRef.current = new WebSocket(wsUrl);
 
-    try {
-      console.log("Attempting WebSocket connection to:", wsUrl);
-      socketRef.current = new WebSocket(wsUrl);
+    socketRef.current.onopen = () => {
+      console.log('WebSocket connected');
+      setIsConnected(true);
 
-      socketRef.current.onopen = () => {
-        console.log("WebSocket connection established");
-        setIsConnected(true);
-        setIsReconnecting(false);
-        reconnectAttemptRef.current = 0;
-      };
+      // Start sending ping messages
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+      }
+      pingIntervalRef.current = setInterval(() => {
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+          socketRef.current.send(JSON.stringify({
+            type: 'ping',
+            timestamp: new Date().toISOString()
+          }));
+        }
+      }, 30000);
+    };
 
-      socketRef.current.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log("Received WebSocket message:", data);
+    socketRef.current.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('Received:', data);
 
-          // Handle system messages (like connection status)
-          if (data.type === 'system' && data.message === 'connected') {
-            toast({
-              title: "Connected",
-              description: "Chat connection established",
-              duration: 3000,
-            });
-            return;
+        if (data.type === 'system') {
+          toast({
+            title: "Connected",
+            description: "Chat connection established",
+            duration: 3000,
+          });
+          return;
+        }
+
+        if (data.type === 'typing') {
+          setTypingUsers(prev => {
+            const newSet = new Set(prev);
+            newSet.add(data.fromAddress);
+            return newSet;
+          });
+
+          if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
           }
-
-          if (data.type === 'typing') {
+          typingTimeoutRef.current = setTimeout(() => {
             setTypingUsers(prev => {
               const newSet = new Set(prev);
-              newSet.add(data.fromAddress);
+              newSet.delete(data.fromAddress);
               return newSet;
             });
+          }, 3000);
+          return;
+        }
 
-            // Clear typing indicator after 3 seconds
-            if (typingTimeoutRef.current) {
-              clearTimeout(typingTimeoutRef.current);
-            }
-            typingTimeoutRef.current = setTimeout(() => {
-              setTypingUsers(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(data.fromAddress);
-                return newSet;
-              });
-            }, 3000);
-            return;
-          }
-
-          // Handle regular messages and errors
-          if (data.error) {
-            if (!data.error.includes("Invalid message format")) {
-              toast({
-                variant: "destructive",
-                title: "Message Error",
-                description: data.error,
-                duration: 3000,
-              });
-            }
-            return;
-          }
-
-          if (!data.type || data.type === 'message') {
-            setMessages(prev => {
-              // Only add the message if it belongs in the current chat context
-              const isRelevantMessage = selectedUser
-                ? (data.fromAddress === address && data.toAddress === selectedUser.address) ||
-                  (data.fromAddress === selectedUser.address && data.toAddress === address)
-                : !data.toAddress;
-
-              if (isRelevantMessage) {
-                console.log("Adding message to chat:", data);
-                return [...prev, data];
-              }
-              return prev;
+        if (data.error) {
+          if (!data.error.includes("Invalid message format")) {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: data.error,
+              duration: 3000,
             });
           }
-        } catch (error) {
-          console.error("Failed to parse message:", error);
+          return;
         }
-      };
 
-      socketRef.current.onerror = (error) => {
-        console.error("WebSocket error:", error);
-        setIsConnected(false);
-      };
-
-      socketRef.current.onclose = () => {
-        console.log("WebSocket connection closed");
-        setIsConnected(false);
-
-        if (!isReconnecting && reconnectAttemptRef.current < maxReconnectAttempts) {
-          setIsReconnecting(true);
-          reconnectAttemptRef.current += 1;
-          reconnectTimeoutRef.current = setTimeout(() => {
-            console.log(`Attempting to reconnect... (Attempt ${reconnectAttemptRef.current})`);
-            connectWebSocket();
-          }, Math.min(1000 * Math.pow(2, reconnectAttemptRef.current), 30000));
-        } else if (reconnectAttemptRef.current >= maxReconnectAttempts) {
-          toast({
-            variant: "destructive",
-            title: "Connection Lost",
-            description: "Unable to reconnect to chat server. Please refresh the page.",
-            duration: 0, // Don't auto-dismiss
-          });
+        if (!data.type || data.type === 'message') {
+          setAllMessages(prev => [...prev, data]);
         }
-      };
-    } catch (error) {
-      console.error("Failed to create WebSocket connection:", error);
+      } catch (error) {
+        console.error("Failed to parse message:", error);
+      }
+    };
+
+    socketRef.current.onclose = () => {
+      console.log('WebSocket closed');
       setIsConnected(false);
-    }
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+      }
+      // Attempt to reconnect after a delay
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      reconnectTimeoutRef.current = setTimeout(setupWebSocket, 2000);
+    };
+
+    socketRef.current.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      toast({
+        variant: "destructive",
+        title: "Connection Error",
+        description: "Chat connection error occurred",
+        duration: 3000,
+      });
+    };
   };
 
   useEffect(() => {
-    connectWebSocket();
-
+    setupWebSocket();
     return () => {
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+      }
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
@@ -213,7 +193,6 @@ export default function ChatInterface({
       timestamp: new Date().toISOString()
     };
 
-    console.log("Sending message:", message);
     socketRef.current.send(JSON.stringify(message));
     setNewMessage("");
   };
@@ -223,56 +202,46 @@ export default function ChatInterface({
       await apiRequest("DELETE", "/api/messages");
       await queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
       toast({
-        title: "Chat Cleared",
-        description: "All messages have been cleared",
-        duration: 3000, 
+        title: "Success",
+        description: "Messages cleared",
+        duration: 3000,
       });
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to clear messages",
-        duration: 3000, 
+        duration: 3000,
       });
     }
   };
 
   const sendTypingStatus = () => {
-    const now = Date.now();
-    if (now - lastTypingTime > 2000) { 
-      if (socketRef.current?.readyState === WebSocket.OPEN) {
-        socketRef.current.send(JSON.stringify({
-          type: 'typing',
-          fromAddress: address,
-          toAddress: selectedUser?.address || null,
-        }));
-        setLastTypingTime(now);
-      }
+    if (Date.now() - lastTypingTime > 2000 && socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({
+        type: 'typing',
+        fromAddress: address,
+        toAddress: selectedUser?.address || null,
+      }));
+      setLastTypingTime(Date.now());
     }
   };
 
-  const filteredMessages = messages;
+  // Filter messages based on current chat context
+  const filteredMessages = allMessages.filter(msg => {
+    if (selectedUser) {
+      return (msg.fromAddress === address && msg.toAddress === selectedUser.address) ||
+             (msg.fromAddress === selectedUser.address && msg.toAddress === address);
+    }
+    return !msg.toAddress; // Public messages
+  });
 
   const handleEmojiSelect = (emoji: any) => {
-    setShowEmojiPicker(false);
     setNewMessage(prev => prev + emoji.native);
-  };
-
-  const handleReaction = (messageId: number, emoji: string) => {
-    toast({
-      title: "Reaction Added",
-      description: `Added reaction ${emoji} to message`,
-      duration: 3000, 
-    });
   };
 
   const shortenAddress = (address: string) => {
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewMessage(e.target.value);
-    sendTypingStatus();
   };
 
   return (
@@ -295,27 +264,15 @@ export default function ChatInterface({
               : "Public Chat"
             }
           </h2>
-          {selectedUser && !showBackButton && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onSelectUser?.(undefined)}
-              className="text-xs hidden md:inline-flex border-[#f4b43e]/20 text-[#f4b43e] hover:bg-[#f4b43e]/10"
-            >
-              Return to Public Chat
-            </Button>
-          )}
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={clearMessages}
-            className="text-[#f4b43e] hover:bg-[#f4b43e]/10"
-          >
-            <Trash2 className="h-5 w-5" />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={clearMessages}
+          className="text-[#f4b43e] hover:bg-[#f4b43e]/10"
+        >
+          <Trash2 className="h-5 w-5" />
+        </Button>
       </div>
 
       <ScrollArea className="flex-1 p-4">
@@ -338,7 +295,7 @@ export default function ChatInterface({
 
       <div className="p-4 border-t border-[#f4b43e]/30 flex gap-2">
         <div className="flex-1 flex gap-2">
-          <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+          <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
@@ -361,17 +318,20 @@ export default function ChatInterface({
           </Popover>
           <Input
             value={newMessage}
-            onChange={handleInputChange}
+            onChange={(e) => {
+              setNewMessage(e.target.value);
+              sendTypingStatus();
+            }}
             placeholder="Type a message..."
             onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
             disabled={!isConnected}
-            className="bg-[#f4b43e]/10 border-[#f4b43e]/20 text-[#f4b43e] placeholder-[#f4b43e]/50 focus:border-[#f4b43e]/50"
+            className="bg-[#f4b43e]/10 border-[#f4b43e]/20 text-[#f4b43e] placeholder-[#f4b43e]/50"
           />
         </div>
         <Button
           onClick={sendMessage}
           disabled={!isConnected}
-          className="bg-[#f4b43e] hover:bg-[#f4b43e] text-black shadow-lg shadow-[#f4b43e]/20"
+          className="bg-[#f4b43e] hover:bg-[#f4b43e]/80 text-black"
         >
           <Send className="h-4 w-4" />
         </Button>
