@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, MessageSquare, UserPlus, UserCheck, Users } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { User, Friend } from "@shared/schema";
+import type { User, Friend, Message } from "@shared/schema";
 import { shortenAddress } from "@/lib/web3";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Badge } from "@/components/ui/badge";
 
 interface ChatListProps {
   currentAddress: string;
@@ -34,6 +35,34 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
   const { data: friendRequests = [] } = useQuery<Friend[]>({
     queryKey: [`/api/friends/requests/${currentAddress}`],
   });
+
+  const { data: messages = [] } = useQuery<Message[]>({
+    queryKey: ['/api/messages'],
+  });
+
+  const getUnreadCount = (friendAddress: string) => {
+    return messages.filter(msg => 
+      msg.fromAddress === friendAddress && 
+      msg.toAddress === currentAddress && 
+      !msg.read
+    ).length;
+  };
+
+  const isFriend = (address: string) => {
+    return friends.some(friend => friend.address === address);
+  };
+
+  const hasPendingRequest = (address: string) => {
+    return friendRequests.some(request => request.requestorAddress === address);
+  };
+
+  // Filter out friends from All Users list
+  const filteredUsers = users.filter(user =>
+    user.address !== currentAddress &&
+    !isFriend(user.address) &&
+    (user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.address.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   const sendFriendRequest = async (recipientAddress: string) => {
     try {
@@ -86,19 +115,6 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
     }
   };
 
-  const isFriend = (address: string) => {
-    return friends.some(friend => friend.address === address);
-  };
-
-  const hasPendingRequest = (address: string) => {
-    return friendRequests.some(request => request.requestorAddress === address);
-  };
-
-  const filteredUsers = users.filter(user =>
-    user.address !== currentAddress &&
-    (user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.address.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
 
   return (
     <Card className="h-full flex flex-col bg-black border border-[#f4b43e]">
@@ -177,42 +193,57 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
                   friend.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                   friend.address.toLowerCase().includes(searchQuery.toLowerCase())
                 )
-                .map((friend) => (
-                  <div key={friend.id} className="flex items-center justify-between">
-                    <Button
-                      variant="ghost"
-                      className={`flex-1 justify-start gap-2 retro-button text-xs ${
-                        selectedUser?.id === friend.id ? 'bg-[#f4b43e] text-black' : ''
-                      }`}
-                      onClick={() => onSelectUser(friend)}
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                      <div className="text-left">
-                        <div className="font-mono text-xs">
-                          {friend.username || shortenAddress(friend.address)}
+                .map((friend) => {
+                  const unreadCount = getUnreadCount(friend.address);
+                  return (
+                    <div key={friend.id} className="flex items-center justify-between">
+                      <Button
+                        variant="ghost"
+                        className={`flex-1 justify-start gap-2 retro-button text-xs ${
+                          selectedUser?.id === friend.id ? 'bg-[#f4b43e] text-black' : ''
+                        }`}
+                        onClick={() => onSelectUser(friend)}
+                      >
+                        <div className="relative">
+                          <MessageSquare className="h-4 w-4" />
+                          <span className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
+                            friend.isOnline ? 'bg-green-500' : 'bg-gray-500'
+                          }`} />
                         </div>
-                        {friend.username && (
-                          <div className="text-[10px] font-mono opacity-70">
-                            {shortenAddress(friend.address)}
+                        <div className="text-left flex-1">
+                          <div className="font-mono text-xs flex items-center justify-between">
+                            <span>{friend.username || shortenAddress(friend.address)}</span>
+                            {unreadCount > 0 && (
+                              <Badge variant="secondary" className="ml-2">
+                                {unreadCount}
+                              </Badge>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </Button>
-                  </div>
-                ))
+                          {friend.username && (
+                            <div className="text-[10px] font-mono opacity-70">
+                              {shortenAddress(friend.address)}
+                            </div>
+                          )}
+                        </div>
+                      </Button>
+                    </div>
+                  );
+                })
             )
           ) : (
             filteredUsers.map((user) => (
               <div key={user.id} className="flex items-center justify-between">
                 <Button
                   variant="ghost"
-                  className={`flex-1 justify-start gap-2 retro-button text-xs ${
-                    selectedUser?.id === user.id ? 'bg-[#f4b43e] text-black' : ''
-                  }`}
-                  onClick={() => isFriend(user.address) && onSelectUser(user)}
-                  disabled={!isFriend(user.address)}
+                  className="flex-1 justify-start gap-2 retro-button text-xs"
+                  disabled
                 >
-                  <MessageSquare className="h-4 w-4" />
+                  <div className="relative">
+                    <MessageSquare className="h-4 w-4" />
+                    <span className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
+                      user.isOnline ? 'bg-green-500' : 'bg-gray-500'
+                    }`} />
+                  </div>
                   <div className="text-left">
                     <div className="font-mono text-xs">
                       {user.username || shortenAddress(user.address)}
@@ -224,7 +255,7 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
                     )}
                   </div>
                 </Button>
-                {!isFriend(user.address) && !hasPendingRequest(user.address) && (
+                {!hasPendingRequest(user.address) && (
                   <Button
                     variant="ghost"
                     size="icon"

@@ -8,6 +8,8 @@ export const users = pgTable("users", {
   address: text("address").notNull().unique(),
   username: text("username").unique(),
   nickname: text("nickname"),
+  isOnline: boolean("is_online").default(false),
+  lastSeen: timestamp("last_seen").defaultNow(),
 });
 
 export const messages = pgTable("messages", {
@@ -16,6 +18,7 @@ export const messages = pgTable("messages", {
   fromAddress: text("from_address").notNull(),
   toAddress: text("to_address"),
   timestamp: timestamp("timestamp").notNull().defaultNow(),
+  read: boolean("read").default(false),
 });
 
 export const friends = pgTable("friends", {
@@ -35,29 +38,43 @@ export const reactions = pgTable("reactions", {
 });
 
 // Then define the schemas
+const usernameSchema = z.string().nullable().refine(
+  (val) => !val || (
+    val.length >= 4 && 
+    val.length <= 20 && 
+    /^[a-zA-Z0-9_]+$/.test(val)
+  ),
+  {
+    message: "Username must be 4-20 characters and can only contain letters, numbers, and underscores"
+  }
+);
+
+const nicknameSchema = z.string().nullable().refine(
+  (val) => !val || (
+    val.length >= 1 && 
+    val.length <= 30 && 
+    /^[a-zA-Z0-9_\s]+$/.test(val)
+  ),
+  {
+    message: "Nickname can only contain letters, numbers, underscores, and spaces"
+  }
+);
+
 export const insertUserSchema = createInsertSchema(users).pick({
   address: true,
   username: true,
   nickname: true,
 }).extend({
-  username: z.string().nullable().refine(
-    (val) => !val || (val.length >= 3 && val.length <= 20 && /^[a-zA-Z0-9_]+$/.test(val)),
-    {
-      message: "Username must be 3-20 characters and can only contain letters, numbers, and underscores"
-    }
-  )
+  username: usernameSchema,
+  nickname: nicknameSchema,
 });
 
 export const updateUserSchema = createInsertSchema(users).pick({
   username: true,
   nickname: true,
 }).extend({
-  username: z.string().nullable().refine(
-    (val) => !val || (val.length >= 3 && val.length <= 20 && /^[a-zA-Z0-9_]+$/.test(val)),
-    {
-      message: "Username must be 3-20 characters and can only contain letters, numbers, and underscores"
-    }
-  )
+  username: usernameSchema,
+  nickname: nicknameSchema,
 });
 
 export const insertMessageSchema = createInsertSchema(messages).pick({

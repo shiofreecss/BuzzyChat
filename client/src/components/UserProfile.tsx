@@ -22,6 +22,7 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
   const [nickname, setNickname] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [nicknameError, setNicknameError] = useState<string | null>(null);
 
   const { data: user, isLoading } = useQuery<User>({
     queryKey: ['/api/users', address],
@@ -42,15 +43,43 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
 
   const validateUsername = (value: string) => {
     if (!value) return true;
-    if (value.length < 3 || value.length > 20) {
-      setUsernameError("Username must be between 3 and 20 characters");
+    if (value.length < 4 || value.length > 20) {
+      setUsernameError("Username must be between 4 and 20 characters");
+      toast({
+        variant: "destructive",
+        title: "Invalid Username",
+        description: "Username must be between 4 and 20 characters",
+        duration: 3000,
+      });
       return false;
     }
     if (!/^[a-zA-Z0-9_]+$/.test(value)) {
       setUsernameError("Username can only contain letters, numbers, and underscores");
+      toast({
+        variant: "destructive",
+        title: "Invalid Username",
+        description: "Username can only contain letters, numbers, and underscores",
+        duration: 3000,
+      });
       return false;
     }
     setUsernameError(null);
+    return true;
+  };
+
+  const validateNickname = (value: string) => {
+    if (!value) return true;
+    if (!/^[a-zA-Z0-9_\s]+$/.test(value)) {
+      setNicknameError("Nickname can only contain letters, numbers, underscores, and spaces");
+      toast({
+        variant: "destructive",
+        title: "Invalid Nickname",
+        description: "Nickname can only contain letters, numbers, underscores, and spaces",
+        duration: 3000,
+      });
+      return false;
+    }
+    setNicknameError(null);
     return true;
   };
 
@@ -60,11 +89,18 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
     validateUsername(value);
   };
 
+  const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNickname(value);
+    validateNickname(value);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
 
     if (username && !validateUsername(username)) return;
+    if (nickname && !validateNickname(nickname)) return;
 
     try {
       setIsSubmitting(true);
@@ -148,7 +184,7 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
               <Input
                 value={username}
                 onChange={handleUsernameChange}
-                placeholder="Enter username"
+                placeholder="Enter username (4-20 characters)"
                 disabled={isSubmitting}
                 className={`retro-input ${usernameError ? 'border-red-500' : ''}`}
               />
@@ -160,11 +196,14 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
               <Label className="font-mono text-xs text-[#f4b43e] uppercase">Nickname</Label>
               <Input
                 value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                placeholder="Enter nickname"
+                onChange={handleNicknameChange}
+                placeholder="Enter display name"
                 disabled={isSubmitting}
-                className="retro-input"
+                className={`retro-input ${nicknameError ? 'border-red-500' : ''}`}
               />
+              {nicknameError && (
+                <p className="text-xs text-red-500 mt-1">{nicknameError}</p>
+              )}
             </div>
             <div className="flex gap-2">
               <Button type="submit" disabled={isSubmitting} className="retro-button text-xs">
