@@ -14,6 +14,7 @@ export interface IStorage {
   addMessage(message: InsertMessage): Promise<Message>;
   clearMessages(): Promise<void>;
   cleanupOldMessages(): Promise<void>;
+  updateOnlineStatus(address: string, isOnline: boolean): Promise<void>;
   // Friend request methods
   sendFriendRequest(request: InsertFriendRequest): Promise<Friend>;
   acceptFriendRequest(requestId: number): Promise<Friend>;
@@ -85,6 +86,21 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async updateOnlineStatus(address: string, isOnline: boolean): Promise<void> {
+    try {
+      await db
+        .update(users)
+        .set({
+          isOnline,
+          lastSeen: new Date()
+        })
+        .where(eq(users.address, address));
+    } catch (error) {
+      console.error(`Failed to update online status for ${address}:`, error);
+      throw error;
+    }
+  }
+
   async getMessages(): Promise<Message[]> {
     return await db.select().from(messages).orderBy(messages.timestamp);
   }
@@ -107,25 +123,7 @@ export class DatabaseStorage implements IStorage {
 
   async cleanupOldMessages(): Promise<void> {
     const thirtyDaysAgo = subDays(new Date(), 30);
-    const sixtyDaysAgo = subDays(new Date(), 60);
-
-    // Delete public messages older than 30 days
-    await db.delete(messages)
-      .where(
-        and(
-          eq(messages.toAddress, null),
-          lt(messages.timestamp, thirtyDaysAgo)
-        )
-      );
-
-    // Delete private messages older than 60 days
-    await db.delete(messages)
-      .where(
-        and(
-          not(eq(messages.toAddress, null)),
-          lt(messages.timestamp, sixtyDaysAgo)
-        )
-      );
+    await db.delete(messages).where(lt(messages.timestamp, thirtyDaysAgo));
   }
 
   async sendFriendRequest(request: InsertFriendRequest): Promise<Friend> {
