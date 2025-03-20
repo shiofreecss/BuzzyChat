@@ -259,7 +259,7 @@ export default function ChatInterface({
 
 
   return (
-    <Card className="flex-1 h-[calc(100vh-8rem)] sm:h-[600px] flex flex-col bg-black border border-[#f4b43e]">
+    <Card className="h-full flex flex-col bg-black border border-[#f4b43e]">
       <div className="p-4 border-b border-[#f4b43e]/30 flex justify-between items-center">
         <div className="flex items-center gap-3">
           {showBackButton && (

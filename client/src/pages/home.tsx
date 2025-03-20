@@ -143,7 +143,7 @@ export default function Home() {
         address={address}
       />
 
-      <main className="flex-1 container max-w-6xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
+      <main className="flex-1 container max-w-6xl mx-auto px-2 sm:px-4 py-2 sm:py-4 min-h-0">
         {address ? (
           <AnimatePresence mode="wait" custom={direction}>
             {showProfile ? (
@@ -155,6 +155,7 @@ export default function Home() {
                 animate="center"
                 exit="exit"
                 transition={pageTransition}
+                className="h-[calc(100vh-12rem)]"
               >
                 <UserProfile 
                   address={address} 
@@ -162,7 +163,7 @@ export default function Home() {
                 />
               </motion.div>
             ) : (
-              <div className="flex flex-col md:flex-row gap-2">
+              <div className="flex flex-col md:flex-row gap-2 h-[calc(100vh-12rem)]">
                 <AnimatePresence mode="wait" custom={direction}>
                   {showChatList && (
                     <motion.div
@@ -173,6 +174,7 @@ export default function Home() {
                       animate="center"
                       exit="exit"
                       transition={pageTransition}
+                      className="h-full"
                     >
                       <ChatList 
                         currentAddress={address} 
@@ -191,7 +193,7 @@ export default function Home() {
                       animate="center"
                       exit="exit"
                       transition={pageTransition}
-                      className="flex-1"
+                      className="flex-1 h-full"
                     >
                       <ChatInterface 
                         address={address}

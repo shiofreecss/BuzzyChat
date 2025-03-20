@@ -192,16 +192,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const requestData = insertFriendRequestSchema.parse(req.body);
 
-      // Check if a friend request already exists
-      const existingRequests = await storage.getFriendRequests(requestData.recipientAddress);
-      const alreadyRequested = existingRequests.some(
-        request => request.requestorAddress === requestData.requestorAddress
-      );
-
-      if (alreadyRequested) {
-        return res.status(400).json({ error: "Friend request already sent" });
-      }
-
       // Check if they are already friends
       const areFriends = await storage.checkFriendship(
         requestData.requestorAddress,
@@ -210,6 +200,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (areFriends) {
         return res.status(400).json({ error: "Already friends" });
+      }
+
+      // Check if any request (pending or accepted) exists between these users
+      const [existingRequest] = await db
+        .select()
+        .from(friends)
+        .where(
+          or(
+            and(
+              eq(friends.requestorAddress, requestData.requestorAddress),
+              eq(friends.recipientAddress, requestData.recipientAddress)
+            ),
+            and(
+              eq(friends.requestorAddress, requestData.recipientAddress),
+              eq(friends.recipientAddress, requestData.requestorAddress)
+            )
+          )
+        );
+
+      if (existingRequest) {
+        return res.status(400).json({ 
+          error: existingRequest.status === 'pending' 
+            ? "Friend request already sent" 
+            : "Already friends"
+        });
       }
 
       const friend = await storage.sendFriendRequest(requestData);
