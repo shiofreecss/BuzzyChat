@@ -4,30 +4,29 @@ import { eq, and, or, lt, not } from "drizzle-orm";
 import { subDays } from "date-fns";
 import { reactions, type Reaction, type InsertReaction } from "@shared/schema";
 
-export interface IStorage {
+// Rename the interface to match the implementation
+interface StorageInterface {
   getUser(address: string): Promise<User | undefined>;
-  getAllUsers(): Promise<User[]>;
+  getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(address: string, update: UpdateUser): Promise<User>;
-  getMessages(): Promise<Message[]>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  updateOnlineStatus(address: string, isOnline: boolean): Promise<void>;
+  getAllUsers(): Promise<User[]>;
   addMessage(message: InsertMessage): Promise<Message>;
+  getMessages(): Promise<Message[]>;
   clearMessages(): Promise<void>;
   cleanupOldMessages(): Promise<void>;
-  updateOnlineStatus(address: string, isOnline: boolean): Promise<void>;
-  // Friend request methods
   sendFriendRequest(request: InsertFriendRequest): Promise<Friend>;
-  acceptFriendRequest(requestId: number): Promise<Friend>;
+  acceptFriendRequest(id: number): Promise<Friend>;
   getFriendRequests(address: string): Promise<Friend[]>;
   getFriends(address: string): Promise<User[]>;
   checkFriendship(address1: string, address2: string): Promise<boolean>;
-  // Add reaction methods
   addReaction(reaction: InsertReaction): Promise<Reaction>;
   getReactions(messageId: number): Promise<Reaction[]>;
-  removeReaction(reactionId: number): Promise<void>;
+  removeReaction(id: number): Promise<void>;
 }
 
-export class DatabaseStorage implements IStorage {
+export class DatabaseStorage implements StorageInterface {
   async getUser(address: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.address, address));
     console.log("getUser result:", user);
@@ -46,19 +45,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    if (insertUser.username) {
-      const existingUser = await this.getUserByUsername(insertUser.username);
-      if (existingUser) {
-        throw new Error("Username already taken");
+    console.log("Starting createUser with data:", insertUser);
+    try {
+      if (insertUser.username) {
+        console.log("Checking if username is already taken:", insertUser.username);
+        const existingUser = await this.getUserByUsername(insertUser.username);
+        if (existingUser) {
+          console.log("Username already taken by:", existingUser);
+          throw new Error("Username already taken");
+        }
       }
+      
+      console.log("Inserting new user into database");
+      const [user] = await db.insert(users).values({
+        ...insertUser,
+        isOnline: true,
+        lastSeen: new Date()
+      }).returning();
+      
+      console.log("User created successfully:", user);
+      return user;
+    } catch (error) {
+      console.error("Error in createUser:", error);
+      throw error;
     }
-    const [user] = await db.insert(users).values({
-      ...insertUser,
-      isOnline: true,
-      lastSeen: new Date()
-    }).returning();
-    console.log("createUser result:", user);
-    return user;
   }
 
   async updateUser(address: string, update: UpdateUser): Promise<User> {
@@ -247,3 +257,166 @@ export class DatabaseStorage implements IStorage {
 }
 
 export const storage = new DatabaseStorage();
+
+// Create a mock storage implementation for offline mode
+class MockStorage implements StorageInterface {
+  private users: Map<string, User> = new Map();
+  private messages: Message[] = [];
+  private friendRequests: Friend[] = [];
+  private reactionCounter = 0;
+  private reactions: Reaction[] = [];
+
+  async getUser(address: string): Promise<User | undefined> {
+    return this.users.get(address);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.username === username);
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.users.size + 1;
+    const user: User = {
+      id,
+      address: insertUser.address,
+      username: insertUser.username,
+      nickname: insertUser.nickname,
+      isOnline: true,
+      lastSeen: new Date()
+    };
+    this.users.set(insertUser.address, user);
+    return user;
+  }
+
+  async updateUser(address: string, update: UpdateUser): Promise<User> {
+    const user = this.users.get(address);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    const updatedUser = { ...user, ...update };
+    this.users.set(address, updatedUser);
+    return updatedUser;
+  }
+
+  async updateOnlineStatus(address: string, isOnline: boolean): Promise<void> {
+    const user = this.users.get(address);
+    if (user) {
+      user.isOnline = isOnline;
+      user.lastSeen = new Date();
+      this.users.set(address, user);
+    }
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async addMessage(message: InsertMessage): Promise<Message> {
+    const newMessage: Message = {
+      id: this.messages.length + 1,
+      content: message.content,
+      fromAddress: message.fromAddress,
+      toAddress: message.toAddress,
+      timestamp: new Date(),
+      read: false
+    };
+    this.messages.push(newMessage);
+    return newMessage;
+  }
+
+  async getMessages(): Promise<Message[]> {
+    return this.messages;
+  }
+
+  async clearMessages(): Promise<void> {
+    this.messages = [];
+  }
+
+  async cleanupOldMessages(): Promise<void> {
+    // No-op for mock
+  }
+
+  async sendFriendRequest(request: InsertFriendRequest): Promise<Friend> {
+    const newRequest: Friend = {
+      id: this.friendRequests.length + 1,
+      requestorAddress: request.requestorAddress,
+      recipientAddress: request.recipientAddress,
+      status: 'pending',
+      timestamp: new Date()
+    };
+    this.friendRequests.push(newRequest);
+    return newRequest;
+  }
+
+  async acceptFriendRequest(id: number): Promise<Friend> {
+    const request = this.friendRequests.find(req => req.id === id);
+    if (!request) {
+      throw new Error("Friend request not found");
+    }
+    request.status = 'accepted';
+    return request;
+  }
+
+  async getFriendRequests(address: string): Promise<Friend[]> {
+    return this.friendRequests.filter(req => req.recipientAddress === address && req.status === 'pending');
+  }
+
+  async getFriends(address: string): Promise<User[]> {
+    const acceptedRequests = this.friendRequests.filter(
+      req => (req.requestorAddress === address || req.recipientAddress === address) && req.status === 'accepted'
+    );
+    
+    const friendAddresses = acceptedRequests.map(req => 
+      req.requestorAddress === address ? req.recipientAddress : req.requestorAddress
+    );
+    
+    return Array.from(this.users.values()).filter(user => friendAddresses.includes(user.address));
+  }
+
+  async checkFriendship(address1: string, address2: string): Promise<boolean> {
+    return this.friendRequests.some(
+      req => ((req.requestorAddress === address1 && req.recipientAddress === address2) ||
+              (req.requestorAddress === address2 && req.recipientAddress === address1)) &&
+              req.status === 'accepted'
+    );
+  }
+
+  async addReaction(reaction: InsertReaction): Promise<Reaction> {
+    this.reactionCounter++;
+    const newReaction: Reaction = {
+      id: this.reactionCounter,
+      messageId: reaction.messageId,
+      fromAddress: reaction.fromAddress,
+      emoji: reaction.emoji,
+      timestamp: new Date()
+    };
+    this.reactions.push(newReaction);
+    return newReaction;
+  }
+
+  async getReactions(messageId: number): Promise<Reaction[]> {
+    return this.reactions.filter(r => r.messageId === messageId);
+  }
+
+  async removeReaction(id: number): Promise<void> {
+    const index = this.reactions.findIndex(r => r.id === id);
+    if (index !== -1) {
+      this.reactions.splice(index, 1);
+    }
+  }
+}
+
+// Create fallback storage for when database is not available
+export const mockStorage = new MockStorage();
+
+// Export a function to get the appropriate storage implementation
+export function getStorage(): StorageInterface {
+  try {
+    // Try connecting to the database with a simple query
+    db.select().from(users).limit(1);
+    return storage; // Return real storage if db works
+  } catch (error) {
+    console.warn("Using mock storage due to database connection issue");
+    return mockStorage; // Return mock storage if db fails
+  }
+}

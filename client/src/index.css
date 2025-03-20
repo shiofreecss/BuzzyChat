@@ -15,6 +15,29 @@
 }
 
 @layer components {
+  .matrix-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .matrix-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 10;
+    pointer-events: none;
+    will-change: transform;
+    mix-blend-mode: lighten;
+    opacity: 0.9;
+  }
+
   .retro-button {
     @apply px-3 py-1.5 bg-[#1a1a1a] border border-[#f4b43e] text-[#f4b43e] font-mono text-xs uppercase tracking-wide;
     text-shadow: 0 0 5px rgba(244, 180, 62, 0.3);

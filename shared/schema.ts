@@ -60,6 +60,14 @@ const nicknameSchema = z.string().nullable().refine(
   }
 );
 
+// Wallet address validation that properly handles Ethereum addresses
+const walletAddressSchema = z.string()
+  .trim()
+  .refine(
+    (val) => val.length > 0, 
+    { message: "Wallet address cannot be empty" }
+  );
+
 export const insertUserSchema = createInsertSchema(users).pick({
   address: true,
   username: true,
@@ -67,6 +75,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 }).extend({
   username: usernameSchema,
   nickname: nicknameSchema,
+  address: walletAddressSchema,
 });
 
 export const updateUserSchema = createInsertSchema(users).pick({

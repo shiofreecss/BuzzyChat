@@ -1,14 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { connectWallet, disconnectWallet, shortenAddress } from "@/lib/web3";
-import { useState } from "react";
-import { Wallet, Settings, LogOut } from "lucide-react";
+import { getMockWallets } from "@/lib/mock-wallet";
+import { useState, useEffect } from "react";
+import { Wallet, Settings, LogOut, TestTube } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import MetaMaskLogo from "@/assets/metamask-logo.svg";
 import CoinbaseLogo from "@/assets/coinbase-logo.svg";
@@ -29,19 +31,38 @@ export default function WalletConnect({
   address 
 }: WalletConnectProps) {
   const [connecting, setConnecting] = useState(false);
+  const [isLocalhost, setIsLocalhost] = useState(false);
   const { toast } = useToast();
+  
+  useEffect(() => {
+    // Check if we're running on localhost
+    setIsLocalhost(
+      window.location.hostname === 'localhost' || 
+      window.location.hostname === '127.0.0.1'
+    );
+  }, []);
 
-  const handleConnect = async (walletType: 'metamask' | 'coinbase') => {
+  const handleConnect = async (walletType: 'metamask' | 'coinbase' | 'test1' | 'test2' | 'test3') => {
     setConnecting(true);
     try {
+      console.log(`Attempting to connect with wallet type: ${walletType}`);
       const address = await connectWallet(walletType);
+      console.log(`Wallet connected successfully: ${address}`);
       onConnect(address);
+      
+      let walletName = walletType === 'metamask' 
+        ? 'MetaMask' 
+        : walletType === 'coinbase' 
+          ? 'Coinbase Wallet'
+          : `Test Wallet ${walletType.replace('test', '')}`;
+          
       toast({
         title: "Wallet Connected",
-        description: `Successfully connected to ${walletType === 'metamask' ? 'MetaMask' : 'Coinbase Wallet'}`,
+        description: `Successfully connected to ${walletName}`,
         duration: 3000,
       });
     } catch (error) {
+      console.error("Wallet connection error:", error);
       toast({
         variant: "destructive",
         title: "Connection Failed",
@@ -57,7 +78,7 @@ export default function WalletConnect({
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button className="retro-button">
+          <Button className="bg-[#f4b43e]/10 hover:bg-[#f4b43e]/20 text-[#f4b43e] border border-[#f4b43e]/30">
             <Wallet className="h-4 w-4" />
             <span className="hidden sm:inline-block sm:ml-2">{shortenAddress(address!)}</span>
           </Button>
@@ -85,7 +106,7 @@ export default function WalletConnect({
       <DropdownMenuTrigger asChild>
         <Button 
           disabled={connecting}
-          className="retro-button"
+          className="bg-[#f4b43e]/10 hover:bg-[#f4b43e]/20 text-[#f4b43e] border border-[#f4b43e]/30"
         >
           <Wallet className="h-4 w-4" />
           <span className="hidden sm:inline-block sm:ml-2">
@@ -108,6 +129,25 @@ export default function WalletConnect({
           <img src={CoinbaseLogo} alt="Coinbase Wallet" className="w-6 h-6" />
           <span>Connect Coinbase</span>
         </DropdownMenuItem>
+        
+        {isLocalhost && (
+          <>
+            <DropdownMenuSeparator className="bg-[#f4b43e]/20" />
+            <DropdownMenuLabel className="text-[#f4b43e]/60 font-mono text-xs pt-2">
+              Local Testing
+            </DropdownMenuLabel>
+            {getMockWallets().map((wallet, index) => (
+              <DropdownMenuItem 
+                key={wallet.address}
+                onClick={() => handleConnect(`test${index + 1}` as any)} 
+                className="flex items-center gap-2 py-2 cursor-pointer text-[#f4b43e] hover:bg-[#f4b43e]/10 font-mono text-xs"
+              >
+                <TestTube className="w-6 h-6" />
+                <span>{wallet.name}</span>
+              </DropdownMenuItem>
+            ))}
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

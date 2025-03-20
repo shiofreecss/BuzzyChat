@@ -8,7 +8,8 @@ import ChatList from "@/components/ChatList";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import MatrixFooter from "@/components/MatrixFooter";
+import MatrixCursor from "@/components/MatrixCursor";
 import type { User as UserType } from "@shared/schema";
 
 // Animation variants
@@ -43,6 +44,7 @@ export default function Home() {
   const [location, setLocation] = useLocation();
   const [isMobile, setIsMobile] = useState(false);
   const [[page, direction], setPage] = useState([0, 0]);
+  const [matrixCursorEnabled, setMatrixCursorEnabled] = useState(true);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -62,18 +64,39 @@ export default function Home() {
 
   const handleConnect = async (walletAddress: string) => {
     try {
-      await apiRequest('POST', '/api/users', {
-        address: walletAddress,
+      const formattedAddress = walletAddress.trim();
+      console.log("Attempting to register user with address:", formattedAddress);
+      
+      const userData = {
+        address: formattedAddress,
         username: null,
         nickname: null,
-      });
-      setAddress(walletAddress);
-      localStorage.setItem('walletAddress', walletAddress);
+      };
+      console.log("Sending user data:", userData);
+      
+      try {
+        const response = await apiRequest('POST', '/api/users', userData);
+        console.log("Registration successful:", response);
+      } catch (apiError) {
+        // If the API fails but we have a valid wallet address, continue anyway
+        console.error("API error, but continuing with wallet:", apiError);
+        // Show a less severe toast
+        toast({
+          title: "Limited Functionality",
+          description: "Connected in offline mode. Some features may be limited.",
+          duration: 5000,
+        });
+      }
+      
+      // Still set the address even if the API call failed
+      setAddress(formattedAddress);
+      localStorage.setItem('walletAddress', formattedAddress);
     } catch (error) {
+      console.error('Registration error details:', error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to register user",
+        title: "Error Creating User",
+        description: error instanceof Error ? error.message : "Failed to register user",
       });
     }
   };
@@ -131,146 +154,144 @@ export default function Home() {
   const showChatList = !isMobile || (isMobile && location === '/');
 
   return (
-    <div className="min-h-screen bg-[#111111] text-[#f4b43e] flex flex-col">
-      <Header
-        onConnect={handleConnect}
-        onProfileClick={() => {
-          setShowProfile(true);
-          setPage([1, 1]); // Animate forward
-        }}
-        onLogout={handleLogout}
-        connected={!!address}
-        address={address}
-      />
+    <>
+      {/* Matrix cursor effect follows the mouse when dragging */}
+      <MatrixCursor enabled={matrixCursorEnabled} />
+      <div className="min-h-screen bg-[#111111] text-[#f4b43e] flex flex-col relative">
+        <Header
+          onConnect={handleConnect}
+          onProfileClick={() => {
+            setShowProfile(true);
+            setPage([1, 1]); // Animate forward
+          }}
+          onLogout={handleLogout}
+          connected={!!address}
+          address={address}
+          toggleMatrixCursor={() => setMatrixCursorEnabled(!matrixCursorEnabled)}
+          matrixCursorEnabled={matrixCursorEnabled}
+        />
 
-      <main className="flex-1 container max-w-6xl mx-auto px-2 sm:px-4 py-2 sm:py-4 min-h-0">
-        {address ? (
-          <AnimatePresence mode="wait" custom={direction}>
-            {showProfile ? (
-              <motion.div
-                key="profile"
-                custom={direction}
-                variants={pageVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={pageTransition}
-                className="h-[calc(100vh-12rem)]"
-              >
-                <UserProfile 
-                  address={address} 
-                  onBack={handleBackFromProfile}
-                />
-              </motion.div>
-            ) : (
-              <div className="flex flex-col md:flex-row gap-2 h-[calc(100vh-12rem)]">
-                <AnimatePresence mode="wait" custom={direction}>
-                  {showChatList && (
-                    <motion.div
-                      key="chatlist"
-                      custom={direction}
-                      variants={pageVariants}
-                      initial={isMobile ? "enter" : "center"}
-                      animate="center"
-                      exit="exit"
-                      transition={pageTransition}
-                      className="h-full"
-                    >
-                      <ChatList 
-                        currentAddress={address} 
-                        onSelectUser={handleSelectUser}
-                        onPublicChat={handlePublicChat}
-                        selectedUser={selectedUser}
-                      />
-                    </motion.div>
-                  )}
-                  {showChatInterface && (
-                    <motion.div
-                      key="chatinterface"
-                      custom={direction}
-                      variants={pageVariants}
-                      initial={isMobile ? "enter" : "center"}
-                      animate="center"
-                      exit="exit"
-                      transition={pageTransition}
-                      className="flex-1 h-full"
-                    >
-                      <ChatInterface 
-                        address={address}
-                        selectedUser={selectedUser}
-                        onSelectUser={handleBackToList}
-                        showBackButton={isMobile}
-                        isPublicChat={selectedUser === undefined}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-          </AnimatePresence>
-        ) : (
-          <div className="text-center py-20 space-y-8">
-            <h2 className="text-4xl font-mono text-[#f4b43e] [text-shadow:_0_0_30px_rgb(244_180_62_/_20%)]">
-              Welcome to Buzzy.Chat
-            </h2>
-            <div className="max-w-2xl mx-auto space-y-6">
-              <p className="text-xl font-mono text-[#f4b43e]/80">
-                Connect, Chat, Create with Web3
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div className="bg-[#f4b43e]/5 backdrop-blur-sm rounded-lg p-6 shadow-lg border border-[#f4b43e]/20">
-                  <h3 className="text-lg font-mono text-[#f4b43e] mb-2">Secure Chat</h3>
-                  <p className="text-sm text-[#f4b43e]/70">
-                    End-to-end encryption and blockchain authentication ensures your conversations stay private and secure.
-                  </p>
+        <main className="flex-1 container max-w-6xl mx-auto px-2 sm:px-4 py-2 sm:py-4 min-h-0">
+          {address ? (
+            <AnimatePresence mode="wait" custom={direction}>
+              {showProfile ? (
+                <motion.div
+                  key="profile"
+                  custom={direction}
+                  variants={pageVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={pageTransition}
+                  className="h-[calc(100vh-12rem)]"
+                >
+                  <UserProfile 
+                    address={address} 
+                    onBack={handleBackFromProfile}
+                  />
+                </motion.div>
+              ) : (
+                <div className="flex flex-col md:flex-row gap-2 h-[calc(100vh-12rem)]">
+                  <AnimatePresence mode="wait" custom={direction}>
+                    {showChatList && (
+                      <motion.div
+                        key="chatlist"
+                        custom={direction}
+                        variants={pageVariants}
+                        initial={isMobile ? "enter" : "center"}
+                        animate="center"
+                        exit="exit"
+                        transition={pageTransition}
+                        className="h-full"
+                      >
+                        <ChatList 
+                          currentAddress={address} 
+                          onSelectUser={handleSelectUser}
+                          onPublicChat={handlePublicChat}
+                          selectedUser={selectedUser}
+                        />
+                      </motion.div>
+                    )}
+                    {showChatInterface && (
+                      <motion.div
+                        key="chatinterface"
+                        custom={direction}
+                        variants={pageVariants}
+                        initial={isMobile ? "enter" : "center"}
+                        animate="center"
+                        exit="exit"
+                        transition={pageTransition}
+                        className="flex-1 h-full"
+                      >
+                        <ChatInterface 
+                          address={address}
+                          selectedUser={selectedUser}
+                          onSelectUser={handleBackToList}
+                          showBackButton={isMobile}
+                          isPublicChat={selectedUser === undefined}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <div className="bg-[#f4b43e]/5 backdrop-blur-sm rounded-lg p-6 shadow-lg border border-[#f4b43e]/20">
-                  <h3 className="text-lg font-mono text-[#f4b43e] mb-2">Web3 Integration</h3>
-                  <p className="text-sm text-[#f4b43e]/70">
-                    Connect with MetaMask or Coinbase Wallet to start chatting with your Web3 community.
-                  </p>
-                </div>
-                <div className="bg-[#f4b43e]/5 backdrop-blur-sm rounded-lg p-6 shadow-lg border border-[#f4b43e]/20">
-                  <h3 className="text-lg font-mono text-[#f4b43e] mb-2">Rich Features</h3>
-                  <p className="text-sm text-[#f4b43e]/70">
-                    Emoji reactions, typing indicators, and real-time messaging enhance your chat experience.
-                  </p>
-                </div>
-              </div>
-              <div className="bg-[#f4b43e]/5 backdrop-blur-sm rounded-lg p-6 shadow-lg max-w-md mx-auto border border-[#f4b43e]/20">
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <div className="inline-flex items-center gap-2 px-6 py-3 bg-[#f4b43e]/10 rounded-full border border-[#f4b43e]/20 text-[#f4b43e] font-mono text-xs">
-                      Connect wallet to start chatting
-                    </div>
+              )}
+            </AnimatePresence>
+          ) : (
+            <div className="text-center py-20 space-y-8">
+              <h2 className="text-4xl font-mono text-[#f4b43e] [text-shadow:_0_0_30px_rgb(244_180_62_/_40%)]">
+                Welcome to Buzzy.Chat
+              </h2>
+              <div className="max-w-2xl mx-auto space-y-6">
+                <p className="text-xl font-mono text-[#f4b43e]/80">
+                  Connect, Chat, Create with Web3
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                  <div className="bg-[#1a1a1a] rounded-lg p-6 shadow-lg border border-[#f4b43e]/20">
+                    <h3 className="text-lg font-mono text-[#f4b43e] mb-2">Secure Chat</h3>
+                    <p className="text-sm text-[#f4b43e]/70">
+                      End-to-end encryption and blockchain authentication ensures your conversations stay private and secure.
+                    </p>
                   </div>
-                  <div className="h-px bg-[#f4b43e]/20"></div>
-                  <div className="text-center font-mono text-[#f4b43e] text-xs space-y-4">
-                    <p>A decentralized chat platform</p>
-                    <p>for web3 communities</p>
-                    <ul className="text-left mt-4 space-y-2">
-                      <li className="flex items-center gap-2">
-                        <span className="text-[#f4b43e]/60">•</span>
-                        Private & public chat rooms
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="text-[#f4b43e]/60">•</span>
-                        Friend system with request management
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="text-[#f4b43e]/60">•</span>
-                        Custom usernames & profiles
-                      </li>
-                    </ul>
+                  <div className="bg-[#1a1a1a] rounded-lg p-6 shadow-lg border border-[#f4b43e]/20">
+                    <h3 className="text-lg font-mono text-[#f4b43e] mb-2">Web3 Integration</h3>
+                    <p className="text-sm text-[#f4b43e]/70">
+                      Connect with MetaMask or Coinbase Wallet to start chatting with your Web3 community.
+                    </p>
+                  </div>
+                  <div className="bg-[#1a1a1a] rounded-lg p-6 shadow-lg border border-[#f4b43e]/20">
+                    <h3 className="text-lg font-mono text-[#f4b43e] mb-2">Rich Features</h3>
+                    <p className="text-sm text-[#f4b43e]/70">
+                      Emoji reactions, typing indicators, and real-time messaging enhance your chat experience.
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-[#1a1a1a] rounded-lg p-6 shadow-lg max-w-md mx-auto border border-[#f4b43e]/20">
+                  <div className="space-y-6">
+                    <div className="text-center">
+                      <div className="inline-flex items-center gap-2 px-6 py-3 bg-[#1a1a1a] rounded-full border border-[#f4b43e]/20 text-[#f4b43e] font-mono text-xs">
+                        Connect wallet to enter the Matrix
+                      </div>
+                    </div>
+                    <div className="h-px bg-[#f4b43e]/20"></div>
+                    <div className="text-center font-mono text-[#f4b43e] text-xs space-y-4">
+                      <p>A decentralized chat platform</p>
+                      <p>for web3 communities</p>
+                    </div>
+                    <WalletConnect 
+                      onConnect={handleConnect} 
+                      onProfileClick={() => {}}
+                      onLogout={handleLogout}
+                      connected={false}
+                    />
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </main>
+          )}
+        </main>
 
-      <Footer />
-    </div>
+        <MatrixFooter />
+      </div>
+    </>
   );
 }
