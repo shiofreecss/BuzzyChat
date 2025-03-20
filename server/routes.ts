@@ -303,7 +303,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-  // Add to existing routes
+  // Add to existing routes section
+  app.delete('/api/users/all', async (_req, res) => {
+    try {
+      await storage.clearAllUsers();
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Failed to clear users:", error);
+      res.status(500).json({ error: "Failed to clear all users" });
+    }
+  });
+
   app.post('/api/messages/:messageId/reactions', async (req, res) => {
     try {
       const { messageId } = req.params;

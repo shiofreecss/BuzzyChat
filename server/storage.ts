@@ -2,8 +2,7 @@ import { users, messages, friends, type User, type InsertUser, type Message, typ
 import { db } from "./db";
 import { eq, and, or, lt, not } from "drizzle-orm";
 import { subDays } from "date-fns";
-import { reactions, type Reaction, type InsertReaction } from "@shared/schema"; // Import the reaction schema
-
+import { reactions, type Reaction, type InsertReaction } from "@shared/schema";
 
 export interface IStorage {
   getUser(address: string): Promise<User | undefined>;
@@ -26,6 +25,7 @@ export interface IStorage {
   getReactions(messageId: number): Promise<Reaction[]>;
   removeReaction(reactionId: number): Promise<void>;
   removeFriend(address1: string, address2: string): Promise<void>;
+  clearAllUsers(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -240,6 +240,13 @@ export class DatabaseStorage implements IStorage {
           )
         )
       );
+  }
+  async clearAllUsers(): Promise<void> {
+    // Delete in correct order to handle foreign key constraints
+    await db.delete(reactions);
+    await db.delete(messages);
+    await db.delete(friends);
+    await db.delete(users);
   }
 }
 
