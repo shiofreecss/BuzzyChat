@@ -25,6 +25,7 @@ export interface IStorage {
   addReaction(reaction: InsertReaction): Promise<Reaction>;
   getReactions(messageId: number): Promise<Reaction[]>;
   removeReaction(reactionId: number): Promise<void>;
+  removeFriend(address1: string, address2: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -223,6 +224,22 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(reactions)
       .where(eq(reactions.id, reactionId));
+  }
+  async removeFriend(address1: string, address2: string): Promise<void> {
+    await db
+      .delete(friends)
+      .where(
+        or(
+          and(
+            eq(friends.requestorAddress, address1),
+            eq(friends.recipientAddress, address2)
+          ),
+          and(
+            eq(friends.requestorAddress, address2),
+            eq(friends.recipientAddress, address1)
+          )
+        )
+      );
   }
 }
 

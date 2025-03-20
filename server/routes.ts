@@ -5,6 +5,9 @@ import { storage } from "./storage";
 import { insertUserSchema, insertMessageSchema, updateUserSchema, insertFriendRequestSchema } from "@shared/schema";
 import { insertReactionSchema } from "@shared/schema";
 import { z } from "zod";
+import { db } from "./db";
+import { eq, and, or, lt, not } from "drizzle-orm";
+import { friends } from "@shared/schema";
 
 // Define a schema for typing status messages
 const typingStatusSchema = z.object({
@@ -78,7 +81,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           content: validatedMessage.content,
           fromAddress: validatedMessage.fromAddress,
           toAddress: validatedMessage.toAddress,
-          timestamp: new Date(validatedMessage.timestamp)
         });
 
         // Broadcast message based on type (private or public)
@@ -141,8 +143,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/users', async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
-      const existingUser = await storage.getUser(userData.address);
 
+      // Check if username is already taken (if provided)
+      if (userData.username) {
+        const existingUser = await storage.getUserByUsername(userData.username);
+        if (existingUser) {
+          return res.status(400).json({ error: "Username already taken" });
+        }
+      }
+
+      const existingUser = await storage.getUser(userData.address);
       if (existingUser) {
         return res.json(existingUser);
       }
@@ -161,6 +171,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Request body:", req.body);
 
       const updateData = updateUserSchema.parse(req.body);
+
+      // Check if new username is already taken (if provided)
+      if (updateData.username) {
+        const existingUser = await storage.getUserByUsername(updateData.username);
+        if (existingUser && existingUser.address !== address) {
+          return res.status(400).json({ error: "Username already taken" });
+        }
+      }
+
       console.log("Validated update data:", updateData);
 
       const updatedUser = await storage.updateUser(address, updateData);
@@ -270,6 +289,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch friends" });
     }
   });
+
+  // Add new route for removing friend
+  app.delete('/api/friends/:address1/:address2', async (req, res) => {
+    try {
+      const { address1, address2 } = req.params;
+      await storage.removeFriend(address1, address2);
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Error removing friend:", error);
+      res.status(500).json({ error: "Failed to remove friend" });
+    }
+  });
+
 
   // Add to existing routes
   app.post('/api/messages/:messageId/reactions', async (req, res) => {

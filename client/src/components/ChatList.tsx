@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, MessageSquare, UserPlus, UserCheck, Users } from "lucide-react";
+import { Trash2, MessageSquare, UserPlus, UserCheck, Users } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User, Friend } from "@shared/schema";
 import { shortenAddress } from "@/lib/web3";
@@ -43,7 +43,6 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
         status: 'pending'
       });
 
-      // Refetch friend requests after sending
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: [`/api/friends/requests/${currentAddress}`] }),
         queryClient.invalidateQueries({ queryKey: ['/api/users'] })
@@ -99,6 +98,27 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
     (user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.address.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  const removeFriend = async (friendAddress: string) => {
+    try {
+      await apiRequest('DELETE', `/api/friends/${currentAddress}/${friendAddress}`);
+
+      await queryClient.invalidateQueries({ queryKey: [`/api/friends/${currentAddress}`] });
+
+      toast({
+        title: "Friend Removed",
+        description: "Successfully removed from friends list",
+        duration: 3000
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to remove friend",
+        duration: 3000
+      });
+    }
+  };
 
   return (
     <Card className="h-full flex flex-col bg-black border border-[#f4b43e]">
@@ -197,6 +217,14 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
                           </div>
                         )}
                       </div>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeFriend(friend.address)}
+                      className="ml-2 retro-button h-7 w-7 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 ))
