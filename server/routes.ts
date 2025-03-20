@@ -163,6 +163,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateData = updateUserSchema.parse(req.body);
       console.log("Validated update data:", updateData);
 
+      // Check if username is being updated and is not null
+      if (updateData.username) {
+        const existingUser = await storage.getUserByUsername(updateData.username);
+        if (existingUser && existingUser.address !== address) {
+          return res.status(400).json({ error: "Username already taken" });
+        }
+      }
+
       const updatedUser = await storage.updateUser(address, updateData);
       console.log("Updated user:", updatedUser);
 

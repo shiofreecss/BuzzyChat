@@ -215,8 +215,28 @@ export default function Home() {
             </h2>
             <div className="max-w-2xl mx-auto space-y-6">
               <p className="text-xl font-mono text-[#f4b43e]/80">
-                Connect, Chat, Create.
+                Connect, Chat, Create with Web3
               </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div className="bg-[#f4b43e]/5 backdrop-blur-sm rounded-lg p-6 shadow-lg border border-[#f4b43e]/20">
+                  <h3 className="text-lg font-mono text-[#f4b43e] mb-2">Secure Chat</h3>
+                  <p className="text-sm text-[#f4b43e]/70">
+                    End-to-end encryption and blockchain authentication ensures your conversations stay private and secure.
+                  </p>
+                </div>
+                <div className="bg-[#f4b43e]/5 backdrop-blur-sm rounded-lg p-6 shadow-lg border border-[#f4b43e]/20">
+                  <h3 className="text-lg font-mono text-[#f4b43e] mb-2">Web3 Integration</h3>
+                  <p className="text-sm text-[#f4b43e]/70">
+                    Connect with MetaMask or Coinbase Wallet to start chatting with your Web3 community.
+                  </p>
+                </div>
+                <div className="bg-[#f4b43e]/5 backdrop-blur-sm rounded-lg p-6 shadow-lg border border-[#f4b43e]/20">
+                  <h3 className="text-lg font-mono text-[#f4b43e] mb-2">Rich Features</h3>
+                  <p className="text-sm text-[#f4b43e]/70">
+                    Emoji reactions, typing indicators, and real-time messaging enhance your chat experience.
+                  </p>
+                </div>
+              </div>
               <div className="bg-[#f4b43e]/5 backdrop-blur-sm rounded-lg p-6 shadow-lg max-w-md mx-auto border border-[#f4b43e]/20">
                 <div className="space-y-6">
                   <div className="text-center">
@@ -228,6 +248,20 @@ export default function Home() {
                   <div className="text-center font-mono text-[#f4b43e] text-xs space-y-4">
                     <p>A decentralized chat platform</p>
                     <p>for web3 communities</p>
+                    <ul className="text-left mt-4 space-y-2">
+                      <li className="flex items-center gap-2">
+                        <span className="text-[#f4b43e]/60">•</span>
+                        Private & public chat rooms
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="text-[#f4b43e]/60">•</span>
+                        Friend system with request management
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="text-[#f4b43e]/60">•</span>
+                        Custom usernames & profiles
+                      </li>
+                    </ul>
                   </div>
                 </div>
               </div>

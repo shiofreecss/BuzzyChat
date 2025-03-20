@@ -2,10 +2,11 @@ import { pgTable, text, serial, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Define all tables first
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   address: text("address").notNull().unique(),
-  username: text("username"),
+  username: text("username").unique(),
   nickname: text("nickname"),
 });
 
@@ -33,16 +34,30 @@ export const reactions = pgTable("reactions", {
   timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
-// Existing schemas
+// Then define the schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   address: true,
   username: true,
   nickname: true,
+}).extend({
+  username: z.string().nullable().refine(
+    (val) => !val || (val.length >= 3 && val.length <= 20 && /^[a-zA-Z0-9_]+$/.test(val)),
+    {
+      message: "Username must be 3-20 characters and can only contain letters, numbers, and underscores"
+    }
+  )
 });
 
 export const updateUserSchema = createInsertSchema(users).pick({
   username: true,
   nickname: true,
+}).extend({
+  username: z.string().nullable().refine(
+    (val) => !val || (val.length >= 3 && val.length <= 20 && /^[a-zA-Z0-9_]+$/.test(val)),
+    {
+      message: "Username must be 3-20 characters and can only contain letters, numbers, and underscores"
+    }
+  )
 });
 
 export const insertMessageSchema = createInsertSchema(messages).pick({
@@ -58,7 +73,6 @@ export const insertFriendRequestSchema = createInsertSchema(friends).pick({
   status: z.literal('pending')
 });
 
-// Add reaction schema
 export const insertReactionSchema = createInsertSchema(reactions).pick({
   messageId: true,
   fromAddress: true,

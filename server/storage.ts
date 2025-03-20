@@ -2,8 +2,7 @@ import { users, messages, friends, type User, type InsertUser, type Message, typ
 import { db } from "./db";
 import { eq, and, or, lt, not } from "drizzle-orm";
 import { subDays } from "date-fns";
-import { reactions, type Reaction, type InsertReaction } from "@shared/schema"; // Import the reaction schema
-
+import { reactions, type Reaction, type InsertReaction } from "@shared/schema";
 
 export interface IStorage {
   getUser(address: string): Promise<User | undefined>;
@@ -39,11 +38,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
+    console.log("Looking up user by username:", username);
     const [user] = await db.select().from(users).where(eq(users.username, username));
+    console.log("getUserByUsername result:", user);
     return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    if (insertUser.username) {
+      const existingUser = await this.getUserByUsername(insertUser.username);
+      if (existingUser) {
+        throw new Error("Username already taken");
+      }
+    }
     const [user] = await db.insert(users).values(insertUser).returning();
     console.log("createUser result:", user);
     return user;
@@ -52,6 +59,13 @@ export class DatabaseStorage implements IStorage {
   async updateUser(address: string, update: UpdateUser): Promise<User> {
     console.log("Updating user with address:", address);
     console.log("Update data:", update);
+
+    if (update.username) {
+      const existingUser = await this.getUserByUsername(update.username);
+      if (existingUser && existingUser.address !== address) {
+        throw new Error("Username already taken");
+      }
+    }
 
     const [user] = await db
       .update(users)

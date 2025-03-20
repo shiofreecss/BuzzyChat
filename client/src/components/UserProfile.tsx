@@ -21,6 +21,7 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
   const [username, setUsername] = useState("");
   const [nickname, setNickname] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
 
   const { data: user, isLoading } = useQuery<User>({
     queryKey: ['/api/users', address],
@@ -39,9 +40,31 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
     }
   }, [user, isEditing]);
 
+  const validateUsername = (value: string) => {
+    if (!value) return true;
+    if (value.length < 3 || value.length > 20) {
+      setUsernameError("Username must be between 3 and 20 characters");
+      return false;
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(value)) {
+      setUsernameError("Username can only contain letters, numbers, and underscores");
+      return false;
+    }
+    setUsernameError(null);
+    return true;
+  };
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setUsername(value);
+    validateUsername(value);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
+
+    if (username && !validateUsername(username)) return;
 
     try {
       setIsSubmitting(true);
@@ -60,11 +83,12 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
         duration: 3000,
       });
       setIsEditing(false);
-    } catch (error) {
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || error.message;
       toast({
         variant: "destructive",
         title: "Update Failed",
-        description: (error as Error).message,
+        description: errorMessage,
         duration: 3000,
       });
     } finally {
@@ -123,11 +147,14 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
               <Label className="font-mono text-xs text-[#f4b43e] uppercase">Username</Label>
               <Input
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={handleUsernameChange}
                 placeholder="Enter username"
                 disabled={isSubmitting}
-                className="retro-input"
+                className={`retro-input ${usernameError ? 'border-red-500' : ''}`}
               />
+              {usernameError && (
+                <p className="text-xs text-red-500 mt-1">{usernameError}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label className="font-mono text-xs text-[#f4b43e] uppercase">Nickname</Label>
