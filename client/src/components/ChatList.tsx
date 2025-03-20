@@ -42,15 +42,25 @@ export default function ChatList({ currentAddress, onSelectUser, onPublicChat, s
         recipientAddress,
         status: 'pending'
       });
+
+      // Refetch friend requests after sending
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [`/api/friends/requests/${currentAddress}`] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/users'] })
+      ]);
+
       toast({
         title: "Friend Request Sent",
         description: "Your friend request has been sent successfully",
+        duration: 3000
       });
     } catch (error) {
+      console.error("Failed to send friend request:", error);
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to send friend request",
+        duration: 3000
       });
     }
   };
