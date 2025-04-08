@@ -1,14 +1,10 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import pg from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 import * as dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config();
-
-// Configure Neon database to use WebSockets
-neonConfig.webSocketConstructor = ws;
 
 // Default database URL for local development
 const DEFAULT_DB_URL = "postgresql://postgres:postgres@localhost:5432/buzzy_chat";
@@ -23,21 +19,18 @@ let pool;
 let db;
 
 try {
-  pool = new Pool({
+  pool = new pg.Pool({
     connectionString: databaseUrl,
   });
   
   // Create Drizzle ORM instance
-  db = drizzle({
-    client: pool,
-    schema
-  });
+  db = drizzle(pool, { schema });
   
   console.log("Database connection initialized");
 } catch (error) {
   console.error("Failed to initialize database connection:", error);
   // Create dummy implementations for offline mode
-  pool = {} as Pool;
+  pool = {} as pg.Pool;
   db = {
     select: () => ({ from: () => [] }),
     insert: () => ({ values: () => ({ returning: () => [] }) }),
