@@ -14,6 +14,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 
 interface ChatMessageProps {
   message: Message;
@@ -28,11 +29,14 @@ interface ReactionCount {
 export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
   const [showPicker, setShowPicker] = useState(false);
   const queryClient = useQueryClient();
+  const { sendMessage } = useWebSocket();
 
-  // Fetch reactions for this message
+  // Fetch reactions for this message with shorter stale time for faster updates
   const { data: reactions = [] } = useQuery<Reaction[]>({
     queryKey: [`/api/messages/${message.id}/reactions`],
     enabled: !!message.id,
+    staleTime: 1000, // Short stale time to refresh quickly
+    refetchInterval: 5000, // Refresh every 5 seconds
   });
 
   // Group reactions by emoji and count them
@@ -47,17 +51,14 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
 
   const handleEmojiSelect = async (emoji: any) => {
     setShowPicker(false);
-    try {
-      await apiRequest("POST", `/api/messages/${message.id}/reactions`, {
-        emoji: emoji.native,
-        fromAddress: message.fromAddress,
-      });
-      await queryClient.invalidateQueries({ 
-        queryKey: [`/api/messages/${message.id}/reactions`] 
-      });
-    } catch (error) {
-      console.error("Failed to add reaction:", error);
-    }
+    
+    // Send reaction through WebSocket
+    sendMessage({
+      type: 'reaction',
+      messageId: message.id,
+      emoji: emoji.native,
+      fromAddress: message.fromAddress
+    });
   };
 
   if (!message) return null;

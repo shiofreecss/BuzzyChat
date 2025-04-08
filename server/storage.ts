@@ -23,6 +23,7 @@ interface StorageInterface {
   checkFriendship(address1: string, address2: string): Promise<boolean>;
   addReaction(reaction: InsertReaction): Promise<Reaction>;
   getReactions(messageId: number): Promise<Reaction[]>;
+  getReactionById(id: number): Promise<Reaction | undefined>;
   removeReaction(id: number): Promise<void>;
 }
 
@@ -75,25 +76,72 @@ export class DatabaseStorage implements StorageInterface {
     console.log("Updating user with address:", address);
     console.log("Update data:", update);
 
+    // First explicitly check if user exists with this address
+    try {
+      const existingUsersList = await db
+        .select()
+        .from(users)
+        .where(eq(users.address, address));
+      
+      console.log("Found users with this address:", existingUsersList.length);
+      console.log("Existing users:", JSON.stringify(existingUsersList, null, 2));
+      
+      if (existingUsersList.length === 0) {
+        console.error(`No user found with address: ${address}`);
+        throw new Error("User not found");
+      }
+    } catch (error) {
+      console.error("Error checking if user exists:", error);
+      throw new Error(`Failed to verify user existence: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
     if (update.username) {
-      const existingUser = await this.getUserByUsername(update.username);
-      if (existingUser && existingUser.address !== address) {
-        throw new Error("Username already taken");
+      try {
+        const existingUser = await this.getUserByUsername(update.username);
+        if (existingUser && existingUser.address !== address) {
+          throw new Error("Username already taken");
+        }
+      } catch (error) {
+        console.error("Error checking username:", error);
+        throw new Error(`Username check failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
-    const [user] = await db
-      .update(users)
-      .set(update)
-      .where(eq(users.address, address))
-      .returning();
-
-    if (!user) {
-      throw new Error("User not found");
+    // Create a clean update object with only defined values
+    const cleanUpdate: Record<string, any> = {};
+    
+    // Explicitly set each property, handling null values correctly
+    if (update.username !== undefined) {
+      cleanUpdate.username = update.username;
     }
+    
+    if (update.nickname !== undefined) {
+      cleanUpdate.nickname = update.nickname;
+    }
+    
+    console.log("Clean update data for database:", cleanUpdate);
 
-    console.log("updateUser result:", user);
-    return user;
+    try {
+      const updatedRows = await db
+        .update(users)
+        .set(cleanUpdate)
+        .where(eq(users.address, address))
+        .returning();
+      
+      console.log("Update query executed, returned rows:", updatedRows.length);
+      console.log("Updated rows:", JSON.stringify(updatedRows, null, 2));
+
+      if (!updatedRows.length) {
+        throw new Error("User not found or no rows updated");
+      }
+
+      const [user] = updatedRows;
+      console.log("updateUser result:", user);
+      return user;
+    } catch (error) {
+      console.error("Database update operation failed:", error);
+      throw new Error(`Database update failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   async updateOnlineStatus(address: string, isOnline: boolean): Promise<void> {
@@ -249,6 +297,16 @@ export class DatabaseStorage implements StorageInterface {
       .orderBy(reactions.timestamp);
   }
 
+  async getReactionById(id: number): Promise<Reaction | undefined> {
+    const result = await db
+      .select()
+      .from(reactions)
+      .where(eq(reactions.id, id))
+      .limit(1);
+    
+    return result[0];
+  }
+
   async removeReaction(reactionId: number): Promise<void> {
     await db
       .delete(reactions)
@@ -396,6 +454,10 @@ class MockStorage implements StorageInterface {
 
   async getReactions(messageId: number): Promise<Reaction[]> {
     return this.reactions.filter(r => r.messageId === messageId);
+  }
+
+  async getReactionById(id: number): Promise<Reaction | undefined> {
+    return this.reactions.find(r => r.id === id);
   }
 
   async removeReaction(id: number): Promise<void> {

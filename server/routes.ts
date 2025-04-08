@@ -16,6 +16,14 @@ const typingStatusSchema = z.object({
   toAddress: z.string().nullable(),
 });
 
+// Define a schema for reaction messages
+const reactionSchema = z.object({
+  type: z.literal('reaction'),
+  messageId: z.number(),
+  emoji: z.string(),
+  fromAddress: z.string(),
+});
+
 // Define a schema for WebSocket messages
 const wsMessageSchema = z.discriminatedUnion("type", [
   z.object({
@@ -26,6 +34,7 @@ const wsMessageSchema = z.discriminatedUnion("type", [
     timestamp: z.string(),
   }),
   typingStatusSchema,
+  reactionSchema,
   z.object({
     type: z.literal('ping'),
     timestamp: z.string(),
@@ -119,6 +128,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } catch (error) {
             console.error("Failed to update online status:", error);
           }
+        }
+
+        // Handle reaction messages
+        if (validatedMessage.type === 'reaction') {
+          console.log('Processing reaction:', validatedMessage);
+          
+          // Store the reaction in the database
+          const reaction = await storage.addReaction({
+            messageId: validatedMessage.messageId,
+            fromAddress: validatedMessage.fromAddress,
+            emoji: validatedMessage.emoji
+          });
+          
+          // Broadcast the reaction to all connected clients
+          const broadcastData = JSON.stringify({
+            type: 'reaction',
+            data: reaction
+          });
+          
+          // Broadcast to all clients
+          clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(broadcastData);
+            }
+          });
+          
+          return;
         }
 
         // Handle typing status messages
@@ -319,24 +355,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("PATCH request for address:", address);
       console.log("Request body:", req.body);
 
-      const updateData = updateUserSchema.parse(req.body);
-      console.log("Validated update data:", updateData);
+      let updateData;
+      try {
+        updateData = updateUserSchema.parse(req.body);
+        console.log("Validated update data:", updateData);
+      } catch (error) {
+        console.error("Schema validation error:", error);
+        return res.status(400).json({ 
+          error: "Invalid update data format", 
+          details: error instanceof Error ? error.message : String(error) 
+        });
+      }
 
       // Check if username is being updated and is not null
       if (updateData.username) {
-        const existingUser = await storage.getUserByUsername(updateData.username);
-        if (existingUser && existingUser.address !== address) {
-          return res.status(400).json({ error: "Username already taken" });
+        try {
+          const existingUser = await storage.getUserByUsername(updateData.username);
+          if (existingUser && existingUser.address !== address) {
+            return res.status(400).json({ error: "Username already taken" });
+          }
+        } catch (error) {
+          console.error("Error checking existing username:", error);
+          return res.status(500).json({ 
+            error: "Failed to validate username",
+            details: error instanceof Error ? error.message : String(error)
+          });
         }
       }
 
-      const updatedUser = await storage.updateUser(address, updateData);
-      console.log("Updated user:", updatedUser);
-
-      res.json(updatedUser);
+      try {
+        const updatedUser = await storage.updateUser(address, updateData);
+        console.log("Updated user:", updatedUser);
+        res.json(updatedUser);
+      } catch (error) {
+        console.error("Database update error:", error);
+        return res.status(500).json({ 
+          error: "Failed to update user in database", 
+          details: error instanceof Error ? error.message : String(error) 
+        });
+      }
     } catch (error) {
       console.error("Update user error:", error);
-      res.status(400).json({ error: "Invalid update data" });
+      res.status(400).json({ 
+        error: "Invalid update data", 
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
     }
   });
 
@@ -482,7 +545,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/reactions/:reactionId', async (req, res) => {
     try {
       const { reactionId } = req.params;
+      const reaction = await storage.getReactionById(parseInt(reactionId));
+      
+      if (!reaction) {
+        return res.status(404).json({ error: "Reaction not found" });
+      }
+      
+      // Remember the messageId before deleting
+      const messageId = reaction.messageId;
+      
       await storage.removeReaction(parseInt(reactionId));
+      
+      // Broadcast the reaction deletion to all connected clients
+      const broadcastData = JSON.stringify({
+        type: 'reaction_deleted',
+        messageId: messageId,
+        reactionId: parseInt(reactionId)
+      });
+      
+      clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(broadcastData);
+        }
+      });
+      
       res.sendStatus(200);
     } catch (error) {
       res.status(500).json({ error: "Failed to remove reaction" });

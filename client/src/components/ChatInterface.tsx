@@ -16,6 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 
 interface ChatInterfaceProps {
   address: string;
@@ -34,16 +35,15 @@ export default function ChatInterface({
 }: ChatInterfaceProps) {
   const [allMessages, setAllMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [isConnected, setIsConnected] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [lastTypingTime, setLastTypingTime] = useState(0);
-  const socketRef = useRef<WebSocket>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const pingIntervalRef = useRef<NodeJS.Timeout>();
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  // Use the WebSocketContext instead of creating our own connection
+  const { socket, isConnected, sendMessage } = useWebSocket();
 
   const { data: initialMessages = [] } = useQuery<Message[]>({
     queryKey: ['/api/messages'],
@@ -65,44 +65,13 @@ export default function ChatInterface({
     scrollToBottom();
   }, [allMessages]);
 
-  const setupWebSocket = () => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) return;
-
-    const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
-    socketRef.current = new WebSocket(wsUrl);
-
-    socketRef.current.onopen = () => {
-      console.log('WebSocket connected');
-      setIsConnected(true);
-
-      // Start sending ping messages
-      if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current);
-      }
-      pingIntervalRef.current = setInterval(() => {
-        if (socketRef.current?.readyState === WebSocket.OPEN) {
-          socketRef.current.send(JSON.stringify({
-            type: 'ping',
-            timestamp: new Date().toISOString()
-          }));
-        }
-      }, 30000);
-    };
-
-    socketRef.current.onmessage = (event) => {
+  // Set up message listener for this specific component
+  useEffect(() => {
+    const messageHandler = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('Received:', data);
-
-        if (data.type === 'system') {
-          toast({
-            title: "Connected",
-            description: "Chat connection established",
-            duration: 3000,
-          });
-          return;
-        }
-
+        
+        // Handle typing status
         if (data.type === 'typing') {
           setTypingUsers(prev => {
             const newSet = new Set(prev);
@@ -123,18 +92,7 @@ export default function ChatInterface({
           return;
         }
 
-        if (data.error) {
-          if (!data.error.includes("Invalid message format")) {
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: data.error,
-              duration: 3000,
-            });
-          }
-          return;
-        }
-
+        // Handle chat messages
         if (!data.type || data.type === 'message') {
           setAllMessages(prev => [...prev, data]);
         }
@@ -143,47 +101,21 @@ export default function ChatInterface({
       }
     };
 
-    socketRef.current.onclose = () => {
-      console.log('WebSocket closed');
-      setIsConnected(false);
-      if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current);
-      }
-      // Attempt to reconnect after a delay
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      reconnectTimeoutRef.current = setTimeout(setupWebSocket, 2000);
-    };
+    // Add the event listener to the socket
+    if (socket) {
+      socket.addEventListener('message', messageHandler);
+    }
 
-    socketRef.current.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      toast({
-        variant: "destructive",
-        title: "Connection Error",
-        description: "Chat connection error occurred",
-        duration: 3000,
-      });
-    };
-  };
-
-  useEffect(() => {
-    setupWebSocket();
+    // Clean up
     return () => {
-      if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current);
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      if (socketRef.current) {
-        socketRef.current.close();
+      if (socket) {
+        socket.removeEventListener('message', messageHandler);
       }
     };
-  }, []);
+  }, [socket]);
 
-  const sendMessage = () => {
-    if (!newMessage.trim() || !socketRef.current || !isConnected) return;
+  const handleSendMessage = () => {
+    if (!newMessage.trim() || !isConnected) return;
 
     const message = {
       type: 'message',
@@ -193,7 +125,7 @@ export default function ChatInterface({
       timestamp: new Date().toISOString()
     };
 
-    socketRef.current.send(JSON.stringify(message));
+    sendMessage(message);
     setNewMessage("");
   };
 
@@ -217,12 +149,12 @@ export default function ChatInterface({
   };
 
   const sendTypingStatus = () => {
-    if (Date.now() - lastTypingTime > 2000 && socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({
+    if (Date.now() - lastTypingTime > 2000 && isConnected) {
+      sendMessage({
         type: 'typing',
         fromAddress: address,
         toAddress: selectedUser?.address || null,
-      }));
+      });
       setLastTypingTime(Date.now());
     }
   };
@@ -323,13 +255,13 @@ export default function ChatInterface({
               sendTypingStatus();
             }}
             placeholder="Type a message..."
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
             disabled={!isConnected}
             className="bg-[#f4b43e]/10 border-[#f4b43e]/20 text-[#f4b43e] placeholder-[#f4b43e]/50"
           />
         </div>
         <Button
-          onClick={sendMessage}
+          onClick={handleSendMessage}
           disabled={!isConnected}
           className="bg-[#f4b43e] hover:bg-[#f4b43e]/80 text-black"
         >

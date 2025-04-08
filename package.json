@@ -9,7 +9,10 @@
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push",
-    "db:seed-test-wallets": "tsx server/seed-test-wallets.ts"
+    "db:seed-test-wallets": "tsx server/seed-test-wallets.ts",
+    "db:local": "node switch-db.js local",
+    "db:neon": "node switch-db.js neon",
+    "netlify:build": "npm run build && mkdir -p dist && cp -r netlify/functions dist/ && npm run db:neon"
   },
   "dependencies": {
     "@coinbase/wallet-sdk": "^4.3.0",
@@ -52,6 +55,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "connect-pg-simple": "^10.0.0",
+    "cors": "^2.8.5",
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.39.1",
@@ -81,15 +85,17 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.0",
     "wouter": "^3.3.5",
-    "ws": "^8.18.0",
+    "ws": "^8.18.1",
     "zod": "^3.23.8",
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
+    "@netlify/functions": "^3.0.4",
     "@replit/vite-plugin-cartographer": "^0.0.8",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
     "@tailwindcss/typography": "^0.5.15",
     "@types/connect-pg-simple": "^7.0.3",
+    "@types/cors": "^2.8.17",
     "@types/express": "4.17.21",
     "@types/express-session": "^1.18.0",
     "@types/node": "20.16.11",
@@ -103,6 +109,7 @@
     "drizzle-kit": "^0.30.4",
     "esbuild": "^0.25.0",
     "postcss": "^8.4.47",
+    "serverless-http": "^3.2.0",
     "tailwindcss": "^3.4.14",
     "tsx": "^4.19.1",
     "typescript": "5.6.3",

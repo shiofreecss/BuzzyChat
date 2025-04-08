@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import { ErrorBoundary } from "react-error-boundary";
+import { WebSocketProvider } from "@/contexts/WebSocketContext";
 
 function ErrorFallback({ error }: { error: Error }) {
   return (
@@ -37,8 +38,10 @@ function App() {
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       <QueryClientProvider client={queryClient}>
-        <Router />
-        <Toaster />
+        <WebSocketProvider>
+          <Router />
+          <Toaster />
+        </WebSocketProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

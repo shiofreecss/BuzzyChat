@@ -79,13 +79,17 @@ These test wallets match the addresses used in the mock wallet implementation, a
 
 ## Database Setup
 
+The application supports both NeonDB (cloud/serverless PostgreSQL) and local PostgreSQL. You can easily switch between them by changing the `.env` configuration.
+
 ### Option 1: Using NeonDB (Cloud)
 1. Sign up for a free account at [NeonDB](https://neon.tech)
 2. Create a new PostgreSQL database
 3. Copy your connection string
-4. Create a `.env` file in the project root with:
+4. Create a `.env` file in the project root (or copy from `.env.example`) with:
    ```
-   DATABASE_URL=your_neon_database_url_here
+   # NeonDB Configuration
+   NEON_DATABASE_URL=your_neon_database_url_here
+   USE_NEON_DB=true
    ```
 
 ### Option 2: Local PostgreSQL Installation (Windows)
@@ -99,11 +103,43 @@ These test wallets match the addresses used in the mock wallet implementation, a
    - Connect to your local server
    - Right-click on "Databases" and select "Create" → "Database"
    - Name your database (e.g., "buzzy_chat")
-4. Create a `.env` file in the project root with:
+4. Create a `.env` file in the project root (or copy from `.env.example`) with:
    ```
-   DATABASE_URL=postgresql://postgres:your_password@localhost:5432/buzzy_chat
+   # Local PostgreSQL Configuration
+   LOCAL_DATABASE_URL=postgresql://postgres:your_password@localhost:5432/buzzy_chat
+   USE_NEON_DB=false
    ```
-5. Run the database migrations:
+
+### Switching Between Databases
+
+There are two easy ways to switch between database types:
+
+#### Option 1: Using the CLI Scripts
+
+We've added convenience scripts to quickly switch database types:
+
+```bash
+# Switch to local PostgreSQL
+npm run db:local
+
+# Switch to NeonDB (cloud)
+npm run db:neon
+```
+
+After switching, restart your server to apply the changes.
+
+#### Option 2: Manual Configuration
+
+Alternatively, you can manually edit your `.env` file:
+
+1. Open your `.env` file
+2. Set `USE_NEON_DB=true` to use NeonDB (cloud)
+3. Set `USE_NEON_DB=false` to use local PostgreSQL
+4. Restart your server
+
+This allows you to develop locally with PostgreSQL and deploy to production with NeonDB without changing your code.
+
+5. Run the database migrations after setting up your database:
    ```bash
    npm run db:push
    ```
@@ -124,3 +160,39 @@ Feel free to open issues and submit pull requests to contribute to this project.
 ## License
 
 MIT License
+
+## Deploying to Netlify
+
+This project can be deployed to Netlify for hosting. Follow these steps:
+
+1. Create a Netlify account at [netlify.com](https://www.netlify.com/)
+2. Install the Netlify CLI:
+   ```bash
+   npm install -g netlify-cli
+   ```
+3. Login to Netlify:
+   ```bash
+   netlify login
+   ```
+4. Initialize your site:
+   ```bash
+   netlify init
+   ```
+5. Set up environment variables in the Netlify dashboard:
+   - `NEON_DATABASE_URL` - Your NeonDB connection string
+   - `USE_NEON_DB` - Set to "true"
+
+6. Deploy your site:
+   ```bash
+   netlify deploy --prod
+   ```
+
+### Important Notes for Netlify Deployment
+
+1. **Database Configuration**: This project uses NeonDB (serverless PostgreSQL) which works well with Netlify. Make sure you've set up your NeonDB database and provided the connection string as an environment variable.
+
+2. **WebSocket Limitations**: Netlify Functions don't support WebSockets natively. For production, consider using a service like Pusher, Socket.io's cloud offering, or Ably to handle real-time communications.
+
+3. **Function Timeout**: Netlify Functions have a timeout limit (default 10 seconds). Make sure your database operations complete within this timeframe.
+
+4. **Cold Starts**: Serverless functions experience "cold starts" when they haven't been used recently. The first request might be slower than subsequent ones.
