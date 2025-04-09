@@ -12,7 +12,7 @@
     "db:seed-test-wallets": "tsx server/seed-test-wallets.ts",
     "db:local": "node switch-db.js local",
     "db:neon": "node switch-db.js neon",
-    "netlify:build": "npm run build && mkdir -p dist && cp -r netlify/functions dist/ && npm run db:neon"
+    "netlify:build": "npm run build && (if not exist dist\\functions mkdir dist\\functions) && esbuild netlify/functions/*.ts --platform=node --packages=external --bundle --format=esm --outdir=dist/functions && npm run db:neon"
   },
   "dependencies": {
     "@coinbase/wallet-sdk": "^4.3.0",
