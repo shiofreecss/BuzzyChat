@@ -1,11 +1,22 @@
 // Note: This is a placeholder for WebSocket functionality
 // Netlify Functions don't support WebSockets directly
-// We'll need to use a service like Pusher or Socket.io with their cloud offering
+// We're using Pusher as an alternative for real-time messaging
 
 import { Handler } from '@netlify/functions';
+import * as dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
+
+// Get Pusher configuration from environment variables
+const pusherConfig = {
+  key: process.env.PUSHER_KEY || '',
+  cluster: process.env.PUSHER_CLUSTER || 'us2',
+  configured: !!(process.env.PUSHER_KEY && process.env.PUSHER_CLUSTER)
+};
 
 export const handler: Handler = async (event) => {
-  // Return a more descriptive message
+  // Return Pusher configuration information
   return {
     statusCode: 200,
     headers: {
@@ -14,15 +25,16 @@ export const handler: Handler = async (event) => {
       'Access-Control-Allow-Headers': 'Content-Type'
     },
     body: JSON.stringify({
-      error: 'websocket_not_supported',
       message: 'WebSocket functionality is not supported on Netlify Functions',
-      details: 'BuzzyChat requires WebSockets for real-time chat. To use BuzzyChat in production, you need to:',
-      solutions: [
-        'Use a different hosting provider that supports WebSockets (Render, Railway, etc.)',
-        'Implement a fallback polling mechanism for messages',
-        'Use a third-party WebSocket service like Pusher or Socket.io'
-      ],
-      status: 'offline_mode'
+      realtime_service: 'pusher',
+      pusher_config: {
+        key: pusherConfig.key,
+        cluster: pusherConfig.cluster
+      },
+      status: pusherConfig.configured ? 'pusher_mode' : 'offline_mode',
+      info: pusherConfig.configured 
+        ? 'Using Pusher for real-time messaging' 
+        : 'Pusher not configured. Update environment variables with Pusher credentials.'
     })
   };
 }; 

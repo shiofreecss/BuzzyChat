@@ -5,9 +5,21 @@ import { storage, getStorage } from "./storage";
 import { insertUserSchema, insertMessageSchema, updateUserSchema, insertFriendRequestSchema } from "@shared/schema";
 import { insertReactionSchema } from "@shared/schema";
 import { z } from "zod";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { db } from "./db";
 import { eq, and, or } from "drizzle-orm";
 import { friends } from "@shared/schema";
+import {
+  isPusherConfigured,
+  triggerPrivateMessage,
+  triggerPublicMessage,
+  triggerReaction,
+  triggerTypingStatus,
+  triggerUserStatus
+} from './pusher';
+
+// Define the type for db to avoid 'any' type errors
+const typedDb = db as any;
 
 // Define a schema for typing status messages
 const typingStatusSchema = z.object({
@@ -41,213 +53,182 @@ const wsMessageSchema = z.discriminatedUnion("type", [
   })
 ]);
 
+// Add a new endpoint to handle Pusher auth for private channels
+const pusherAuthSchema = z.object({
+  socket_id: z.string(),
+  channel_name: z.string(),
+  user_address: z.string().optional(),
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
-  console.log("Creating WebSocket server on path: /ws");
   
-  // Create WebSocket server with error handling
+  // Add Pusher authentication endpoint
+  app.post('/api/pusher/auth', async (req, res) => {
+    try {
+      if (!isPusherConfigured) {
+        return res.status(503).json({ error: "Pusher is not configured" });
+      }
+      
+      const validatedData = pusherAuthSchema.parse(req.body);
+      const { socket_id, channel_name, user_address } = validatedData;
+      
+      // For private channels, verify permissions
+      if (channel_name.startsWith('private-')) {
+        // Implement access control as needed
+        
+        // For example, for private chats, verify that the user is part of the conversation
+        if (channel_name.startsWith('private-chat-') && user_address) {
+          const parts = channel_name.replace('private-chat-', '').split('-');
+          const user1 = parts[0];
+          const user2 = parts[1];
+          
+          if (user_address !== user1 && user_address !== user2) {
+            return res.status(403).json({ error: "Unauthorized access to channel" });
+          }
+        }
+        
+        // Import pusher directly here to avoid circular dependencies
+        const { pusher } = require('./pusher');
+        const auth = pusher.authorizeChannel(socket_id, channel_name);
+        return res.json(auth);
+      }
+      
+      return res.status(400).json({ error: "Channel is not private" });
+    } catch (error) {
+      console.error('Pusher auth error:', error);
+      return res.status(400).json({ error: "Invalid request" });
+    }
+  });
+  
+  // Keep this for backward compatibility, but use Pusher for real-time communication
+  console.log("Creating WebSocket server for backward compatibility");
   const wss = new WebSocketServer({ 
     server: httpServer, 
     path: '/ws',
-    // Add error handling for WebSocket connection issues
     clientTracking: true,
     perMessageDeflate: false
   });
   
-  // Handle server-level errors
   wss.on('error', (error) => {
     console.error('WebSocket server error:', error);
   });
 
-  // Store connected clients with their addresses
-  const clients = new Map<string, WebSocket>();
-
-  // Heartbeat interval
-  const HEARTBEAT_INTERVAL = 30000;
-  const HEARTBEAT_TIMEOUT = 35000;
-
-  function heartbeat(ws: WebSocket) {
-    const wsAny = ws as any;
-    wsAny.isAlive = true;
-  }
-
-  // Set up heartbeat interval
-  const interval = setInterval(() => {
-    wss.clients.forEach((ws) => {
-      const wsAny = ws as any;
-      if (wsAny.isAlive === false) {
-        console.log("Terminating inactive connection");
-        return ws.terminate();
-      }
-      wsAny.isAlive = false;
-      ws.ping();
-    });
-  }, HEARTBEAT_INTERVAL);
-
-  wss.on('close', () => {
-    clearInterval(interval);
+  wss.on('connection', (ws, req) => {
+    console.log(`WebSocket connection received but using Pusher instead`);
+    
+    // Send a message about using Pusher instead
+    ws.send(JSON.stringify({ 
+      type: 'system',
+      message: 'Using Pusher for real-time communication. Please update your client.',
+      timestamp: new Date().toISOString(),
+      pusher_enabled: isPusherConfigured
+    }));
   });
 
-  wss.on('connection', (ws, req) => {
-    console.log(`New WebSocket connection from ${req.socket.remoteAddress}`);
-    let clientAddress: string | undefined;
-
-    // Initialize heartbeat
-    const wsAny = ws as any;
-    wsAny.isAlive = true;
-    ws.on('pong', () => heartbeat(ws));
-
-    ws.on('error', (error) => {
-      console.error('WebSocket error occurred:', error);
-      if (clientAddress) {
-        console.error(`Error for client ${clientAddress}:`, error);
-      }
+  // HTTP route to check Pusher status
+  app.get('/api/pusher/status', (_req, res) => {
+    res.json({
+      pusher_enabled: isPusherConfigured,
+      status: isPusherConfigured ? 'active' : 'not_configured'
     });
+  });
+  
+  // HTTP route to send a message (for clients that don't use Pusher yet)
+  app.post('/api/messages', async (req, res) => {
+    try {
+      const messageData = insertMessageSchema.parse(req.body);
+      
+      // Check friendship if it's a private message
+      if (messageData.toAddress) {
+        const areFriends = await storage.checkFriendship(
+          messageData.fromAddress,
+          messageData.toAddress
+        );
 
-    ws.on('message', async (data) => {
-      try {
-        console.log('Received raw message:', data.toString());
-        const message = JSON.parse(data.toString());
-        console.log('Parsed message:', message);
-        const validatedMessage = wsMessageSchema.parse(message);
-        console.log('Validated message:', validatedMessage);
-
-        if (validatedMessage.type === 'ping') {
-          ws.send(JSON.stringify({ type: 'pong', timestamp: new Date().toISOString() }));
-          return;
-        }
-
-        // Store the client's address for future reference
-        if (!clientAddress) {
-          clientAddress = validatedMessage.fromAddress;
-          clients.set(clientAddress, ws);
-          console.log(`Registered client with address: ${clientAddress}`);
-          try {
-            await storage.updateOnlineStatus(clientAddress, true);
-            console.log(`Updated online status for ${clientAddress}`);
-          } catch (error) {
-            console.error("Failed to update online status:", error);
-          }
-        }
-
-        // Handle reaction messages
-        if (validatedMessage.type === 'reaction') {
-          console.log('Processing reaction:', validatedMessage);
-          
-          // Store the reaction in the database
-          const reaction = await storage.addReaction({
-            messageId: validatedMessage.messageId,
-            fromAddress: validatedMessage.fromAddress,
-            emoji: validatedMessage.emoji
+        if (!areFriends) {
+          return res.status(403).json({ 
+            error: "You can only send messages to users in your friends list" 
           });
-          
-          // Broadcast the reaction to all connected clients
-          const broadcastData = JSON.stringify({
-            type: 'reaction',
-            data: reaction
-          });
-          
-          // Broadcast to all clients
-          clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-              client.send(broadcastData);
-            }
-          });
-          
-          return;
         }
-
-        // Handle typing status messages
-        if (validatedMessage.type === 'typing') {
-          console.log('Processing typing status:', validatedMessage);
-          const broadcastData = JSON.stringify(validatedMessage);
-          if (validatedMessage.toAddress) {
-            const recipientWs = clients.get(validatedMessage.toAddress);
-            if (recipientWs?.readyState === WebSocket.OPEN) {
-              recipientWs.send(broadcastData);
-              console.log(`Sent typing status to ${validatedMessage.toAddress}`);
-            }
-          }
-          return;
-        }
-
-        // For chat messages, check friendship and store the message
-        if (validatedMessage.toAddress) {
-          console.log('Checking friendship between', validatedMessage.fromAddress, 'and', validatedMessage.toAddress);
-          const areFriends = await storage.checkFriendship(
-            validatedMessage.fromAddress,
-            validatedMessage.toAddress
+      }
+      
+      // Store the message
+      const savedMessage = await storage.addMessage(messageData);
+      
+      // Send via Pusher if configured
+      if (isPusherConfigured) {
+        if (messageData.toAddress) {
+          await triggerPrivateMessage(
+            messageData.fromAddress,
+            messageData.toAddress,
+            savedMessage
           );
-
-          if (!areFriends) {
-            console.log('Friendship check failed, sending error');
-            ws.send(JSON.stringify({ 
-              error: "You can only send messages to users in your friends list" 
-            }));
-            return;
-          }
-        }
-
-        // Store the message in the database
-        console.log('Storing message in database');
-        const savedMessage = await storage.addMessage({
-          content: validatedMessage.content,
-          fromAddress: validatedMessage.fromAddress,
-          toAddress: validatedMessage.toAddress
-        });
-        console.log('Message stored:', savedMessage);
-
-        // Broadcast message based on type (private or public)
-        const broadcastData = JSON.stringify(savedMessage);
-
-        if (validatedMessage.toAddress) {
-          // Private message: send only to sender and recipient
-          console.log('Sending private message to recipient');
-          const recipientWs = clients.get(validatedMessage.toAddress);
-          if (recipientWs?.readyState === WebSocket.OPEN) {
-            recipientWs.send(broadcastData);
-            console.log('Sent to recipient');
-          }
-          ws.send(broadcastData);
-          console.log('Sent to sender');
         } else {
-          // Public message: broadcast to all connected clients
-          console.log('Broadcasting public message to all clients');
-          wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-              client.send(broadcastData);
-            }
-          });
-          console.log('Broadcast complete');
+          await triggerPublicMessage(savedMessage);
         }
-      } catch (error) {
-        console.error('WebSocket message error:', error);
-        ws.send(JSON.stringify({ error: "Invalid message format" }));
       }
-    });
-
-    ws.on('close', async () => {
-      console.log(`WebSocket connection closed for ${clientAddress || 'unknown client'}`);
-      if (clientAddress) {
-        try {
-          await storage.updateOnlineStatus(clientAddress, false);
-          console.log(`Updated offline status for ${clientAddress}`);
-        } catch (error) {
-          console.error("Failed to update offline status:", error);
+      
+      res.json(savedMessage);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      res.status(400).json({ 
+        error: "Failed to send message",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // HTTP route to send reaction (for clients that don't use Pusher yet)
+  app.post('/api/reactions', async (req, res) => {
+    try {
+      const reactionData = insertReactionSchema.parse(req.body);
+      const reaction = await storage.addReaction(reactionData);
+      
+      // Send via Pusher if configured
+      if (isPusherConfigured) {
+        // Ensure messageId is a number
+        const messageId = reaction.messageId;
+        if (typeof messageId === 'number') {
+          await triggerReaction(messageId, reaction);
         }
-        clients.delete(clientAddress);
-        console.log(`Removed client ${clientAddress} from active clients`);
       }
-    });
-
-    // Send a welcome message
-    const welcomeMessage = JSON.stringify({ 
-      type: 'system',
-      message: 'connected',
-      timestamp: new Date().toISOString()
-    });
-    console.log('Sending welcome message:', welcomeMessage);
-    ws.send(welcomeMessage);
+      
+      res.json(reaction);
+    } catch (error) {
+      console.error('Error sending reaction:', error);
+      res.status(400).json({ 
+        error: "Failed to send reaction",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // HTTP route to update user online status
+  app.post('/api/users/:address/status', async (req, res) => {
+    try {
+      const { address } = req.params;
+      const { isOnline } = req.body;
+      
+      if (typeof isOnline !== 'boolean') {
+        return res.status(400).json({ error: "isOnline must be a boolean" });
+      }
+      
+      await storage.updateOnlineStatus(address, isOnline);
+      
+      // Send via Pusher if configured
+      if (isPusherConfigured) {
+        await triggerUserStatus(address, isOnline);
+      }
+      
+      res.json({ address, isOnline });
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      res.status(400).json({ 
+        error: "Failed to update user status",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
   });
 
   // Regular HTTP routes
@@ -437,7 +418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if any request (pending or accepted) exists between these users
-      const [existingRequest] = await db
+      const [existingRequest] = await typedDb
         .select()
         .from(friends)
         .where(
@@ -520,7 +501,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: reaction,
       });
 
-      clients.forEach((client) => {
+      wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(broadcastData);
         }
@@ -563,7 +544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         reactionId: parseInt(reactionId)
       });
       
-      clients.forEach((client) => {
+      wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(broadcastData);
         }
