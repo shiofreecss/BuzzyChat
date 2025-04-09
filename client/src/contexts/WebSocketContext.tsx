@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useRef, useEffect, useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { checkPusherEnvironment } from "../pusher-client";
+import { checkPusherEnvironment, initializePusher } from "../pusher-client";
 
 interface WebSocketContextType {
   socket: WebSocket | null;
@@ -28,42 +28,81 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const pingIntervalRef = useRef<NodeJS.Timeout>();
   const hasToastedErrorRef = useRef(false);
+  const isNetlifyRef = useRef(false);
 
-  // First check if we're on Netlify and should use Pusher instead
+  // Check if we're on Netlify
   useEffect(() => {
-    const checkPusherStatus = async () => {
-      try {
-        const envStatus = await checkPusherEnvironment();
-        const isPusherConfigured = envStatus.pusher_key_set && envStatus.pusher_cluster_set;
-        
-        if (isPusherConfigured) {
-          console.log('Using Pusher for real-time messaging');
-          setIsPusherMode(true);
-          setIsConnected(true); // Consider Pusher as "connected" by default
-          
-          toast({
-            title: "Using Pusher",
-            description: "Chat will use Pusher instead of WebSockets",
-            duration: 3000,
-          });
-        } else {
-          // Only attempt WebSocket connection if Pusher is not configured
-          setupWebSocket();
-        }
-      } catch (error) {
-        console.error('Error checking Pusher status:', error);
-        // Fallback to WebSockets if we can't check Pusher status
-        setupWebSocket();
-      }
-    };
+    // Check if we're on Netlify based on domain name
+    const isNetlify = window.location.hostname.includes('netlify.app');
+    isNetlifyRef.current = isNetlify;
     
-    checkPusherStatus();
+    // If we're on Netlify, we know WebSockets won't work, so default to Pusher mode
+    if (isNetlify) {
+      console.log('Running on Netlify - automatically using Pusher for real-time communication');
+      testPusherConnection();
+    } else {
+      // On other platforms, try Pusher first, then fall back to WebSockets
+      checkPusherStatus();
+    }
     
-    return () => {
-      cleanup();
-    };
+    return () => cleanup();
   }, []);
 
+  const testPusherConnection = async () => {
+    try {
+      // Try to initialize Pusher directly
+      const pusher = await initializePusher();
+      if (pusher) {
+        console.log('Pusher connection successful');
+        setIsPusherMode(true);
+        setIsConnected(true);
+        
+        // No need to show toast on initial page load for Netlify
+        if (!isNetlifyRef.current) {
+          toast({
+            title: "Chat Connected",
+            description: "Using Pusher for real-time messaging",
+            duration: 3000,
+          });
+        }
+      } else {
+        console.error('Pusher initialization failed, trying WebSockets');
+        // Only try WebSockets if not on Netlify
+        if (!isNetlifyRef.current) {
+          setupWebSocket();
+        } else {
+          // On Netlify, we know WebSockets won't work, so just show a subtle message
+          console.log('On Netlify without Pusher config - chat will be limited');
+          setIsConnected(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error testing Pusher connection:', error);
+      // Only try WebSockets if not on Netlify
+      if (!isNetlifyRef.current) {
+        setupWebSocket();
+      }
+    }
+  };
+
+  const checkPusherStatus = async () => {
+    try {
+      const envStatus = await checkPusherEnvironment();
+      const isPusherConfigured = envStatus.pusher_key_set && envStatus.pusher_cluster_set;
+      
+      if (isPusherConfigured) {
+        testPusherConnection();
+      } else {
+        // Only attempt WebSocket connection if Pusher is not configured
+        setupWebSocket();
+      }
+    } catch (error) {
+      console.error('Error checking Pusher status:', error);
+      // Fallback to WebSockets if we can't check Pusher status
+      setupWebSocket();
+    }
+  };
+  
   const cleanup = () => {
     if (pingIntervalRef.current) {
       clearInterval(pingIntervalRef.current);
@@ -81,6 +120,12 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     
     // Don't attempt WebSocket connection if we're using Pusher
     if (isPusherMode) return;
+    
+    // Don't attempt WebSocket connection if we're on Netlify
+    if (isNetlifyRef.current) {
+      console.log('Not attempting WebSocket on Netlify');
+      return;
+    }
 
     const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
     console.log('Attempting WebSocket connection to:', wsUrl);
@@ -168,19 +213,28 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       socketRef.current.onerror = (error) => {
         console.error('WebSocket error:', error);
         
-        // Only show the toast once
-        if (!hasToastedErrorRef.current && !isPusherMode) {
+        // Only show the toast once and only if we're not on Netlify
+        // Netlify users expect WebSockets to fail so we don't need to notify them
+        if (!hasToastedErrorRef.current && !isPusherMode && !isNetlifyRef.current) {
           hasToastedErrorRef.current = true;
           toast({
             variant: "destructive",
             title: "Connection Error",
-            description: "Chat connection error occurred. Will continue trying to connect...",
+            description: "Chat connection error occurred. Checking for Pusher fallback...",
             duration: 5000,
           });
+          
+          // Try Pusher as a fallback
+          testPusherConnection();
         }
       };
     } catch (error) {
       console.error('Error creating WebSocket:', error);
+      
+      // Try Pusher as a fallback if WebSocket creation fails
+      if (!isPusherMode) {
+        testPusherConnection();
+      }
     }
   };
 
@@ -195,7 +249,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       socketRef.current.send(JSON.stringify(message));
     } else {
       console.error('WebSocket is not connected');
-      if (!hasToastedErrorRef.current) {
+      if (!hasToastedErrorRef.current && !isNetlifyRef.current) {
         hasToastedErrorRef.current = true;
         toast({
           variant: "destructive",
