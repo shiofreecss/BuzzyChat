@@ -51,9 +51,19 @@ export async function connectWallet(walletType: 'metamask' | 'coinbase' | 'test1
       provider = new ethers.BrowserProvider(ethereum);
     }
 
-    const accounts = await provider.send("eth_requestAccounts", []);
-    return accounts[0];
+    try {
+      const accounts = await provider.send("eth_requestAccounts", []);
+      return accounts[0];
+    } catch (error: any) {
+      // Handle the "already processing" error (-32002)
+      if (error.code === -32002) {
+        console.log("MetaMask is already processing a request. Please check your wallet and confirm the connection request.");
+        throw new Error("Please check your MetaMask extension. A connection request is already pending.");
+      }
+      throw error;
+    }
   } catch (error) {
+    console.error("Wallet connection failed:", error);
     throw new Error("Failed to connect wallet: " + (error as Error).message);
   }
 }

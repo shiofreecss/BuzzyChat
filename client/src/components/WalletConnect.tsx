@@ -43,6 +43,9 @@ export default function WalletConnect({
   }, []);
 
   const handleConnect = async (walletType: 'metamask' | 'coinbase' | 'test1' | 'test2' | 'test3') => {
+    // Prevent multiple simultaneous connection attempts
+    if (connecting) return;
+    
     setConnecting(true);
     try {
       console.log(`Attempting to connect with wallet type: ${walletType}`);
@@ -61,13 +64,22 @@ export default function WalletConnect({
         description: `Successfully connected to ${walletName}`,
         duration: 3000,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Wallet connection error:", error);
+      
+      // Handle specific error cases
+      let errorMessage = (error as Error).message;
+      
+      // Check if it's the "already processing" error
+      if (errorMessage.includes("already pending") || errorMessage.includes("-32002")) {
+        errorMessage = "Please check your wallet and approve the connection request that's already open.";
+      }
+      
       toast({
         variant: "destructive",
         title: "Connection Failed",
-        description: (error as Error).message,
-        duration: 3000,
+        description: errorMessage,
+        duration: 5000,
       });
     } finally {
       setConnecting(false);
