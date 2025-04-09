@@ -19,7 +19,7 @@ A decentralized chat platform for web3 communities, built with React, Express, a
 - Backend: Express.js, Node.js
 - Database: NeonDB (Serverless Postgres)
 - Authentication: Web3 (MetaMask/Coinbase Wallet)
-- Real-time: WebSocket
+- Real-time: WebSocket (local) or Pusher (production)
 
 ## Getting Started
 
@@ -43,6 +43,47 @@ npm run build
 # Start production server
 npm start
 ```
+
+## Real-Time Messaging Options
+
+Buzzy.Chat supports two methods for real-time messaging:
+
+### WebSockets (Development)
+
+WebSockets are used by default in development mode. This is a direct connection between the client and server that provides real-time message delivery.
+
+### Pusher (Production/Netlify)
+
+For production deployments, especially on platforms like Netlify that don't support WebSockets, Buzzy.Chat uses Pusher as a real-time messaging service.
+
+#### Setting Up Pusher
+
+1. Create a free account at [Pusher.com](https://pusher.com/)
+2. Create a new Channels app in the Pusher dashboard
+3. Note your app credentials:
+   - App ID
+   - Key
+   - Secret
+   - Cluster
+4. Add these credentials to your `.env` file:
+   ```
+   PUSHER_APP_ID=your_app_id
+   PUSHER_KEY=your_key
+   PUSHER_SECRET=your_secret
+   PUSHER_CLUSTER=your_cluster
+   ```
+
+The application will automatically detect whether to use WebSockets or Pusher based on:
+- The presence of Pusher credentials in your environment
+- Whether you're running on Netlify (automatically uses Pusher)
+
+#### Verifying Pusher Connection
+
+To verify if Pusher is working correctly:
+
+1. Open your browser console on your deployed site
+2. Run: `fetch('/.netlify/functions/debug-env').then(r => r.json()).then(console.log)`
+3. You should see your Pusher configuration status
 
 ## Local Development Wallet Testing
 
@@ -181,6 +222,10 @@ This project can be deployed to Netlify for hosting. Follow these steps:
 5. Set up environment variables in the Netlify dashboard:
    - `NEON_DATABASE_URL` - Your NeonDB connection string
    - `USE_NEON_DB` - Set to "true"
+   - `PUSHER_APP_ID` - Your Pusher app ID
+   - `PUSHER_KEY` - Your Pusher key
+   - `PUSHER_SECRET` - Your Pusher secret
+   - `PUSHER_CLUSTER` - Your Pusher cluster
 
 6. Deploy your site:
    ```bash
@@ -191,8 +236,12 @@ This project can be deployed to Netlify for hosting. Follow these steps:
 
 1. **Database Configuration**: This project uses NeonDB (serverless PostgreSQL) which works well with Netlify. Make sure you've set up your NeonDB database and provided the connection string as an environment variable.
 
-2. **WebSocket Limitations**: Netlify Functions don't support WebSockets natively. For production, consider using a service like Pusher, Socket.io's cloud offering, or Ably to handle real-time communications.
+2. **Real-time Communication**: Netlify Functions don't support WebSockets natively, so this project automatically uses Pusher for real-time communication when deployed to Netlify. Make sure you've set up all Pusher environment variables.
 
-3. **Function Timeout**: Netlify Functions have a timeout limit (default 10 seconds). Make sure your database operations complete within this timeframe.
+3. **Connection Status**: The chat interface shows a connection indicator that displays whether you're connected via Pusher or WebSockets.
 
-4. **Cold Starts**: Serverless functions experience "cold starts" when they haven't been used recently. The first request might be slower than subsequent ones.
+4. **Hybrid Mode**: The application can fall back to HTTP polling if both WebSockets and Pusher are unavailable, ensuring chat functionality works in all environments.
+
+5. **Function Timeout**: Netlify Functions have a timeout limit (default 10 seconds). Make sure your database operations complete within this timeframe.
+
+6. **Cold Starts**: Serverless functions experience "cold starts" when they haven't been used recently. The first request might be slower than subsequent ones.
