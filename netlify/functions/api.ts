@@ -11,6 +11,14 @@ const app: Express = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+// Add a specific route for checking WebSocket status
+app.get('/api/ws-status', (req, res) => {
+  res.json({
+    status: 'fallback_mode',
+    message: 'WebSockets are not supported on Netlify. Using fallback HTTP polling for messages.'
+  });
+});
+
 // Register routes
 registerRoutes(app);
 
