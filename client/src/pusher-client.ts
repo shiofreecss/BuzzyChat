@@ -20,10 +20,23 @@ type ReactionHandler = (data: any) => void;
 export async function initializePusher(): Promise<Pusher | null> {
   try {
     const response = await fetch('/.netlify/functions/ws');
+    
+    if (!response.ok) {
+      console.error(`Server returned status ${response.status}: ${response.statusText}`);
+      return null;
+    }
+    
     const data = await response.json();
+    console.log('Pusher config response:', data); // Debug the actual response
     
     if (data.status !== 'pusher_mode') {
       console.warn('Pusher mode not active:', data.message);
+      return null;
+    }
+    
+    // Verify Pusher config has required values
+    if (!data.pusher_config?.key || !data.pusher_config?.cluster) {
+      console.error('Invalid Pusher configuration:', data.pusher_config);
       return null;
     }
     
@@ -157,5 +170,19 @@ export function cleanup(pusher: Pusher | null, channels: Channels | null) {
     pusher.disconnect();
   } catch (error) {
     console.error('Error during cleanup:', error);
+  }
+}
+
+// Debug function to check environment variables
+export async function checkPusherEnvironment(): Promise<any> {
+  try {
+    const response = await fetch('/.netlify/functions/debug-env');
+    if (!response.ok) {
+      throw new Error(`Server returned ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error checking Pusher environment:', error);
+    return { error: String(error) };
   }
 } 
