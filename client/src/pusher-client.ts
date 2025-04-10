@@ -1,4 +1,5 @@
 import Pusher from 'pusher-js';
+import { API_BASE_URL } from './lib/api-config';
 
 // Types for Pusher channels
 type Channel = ReturnType<Pusher['subscribe']>;
@@ -133,10 +134,13 @@ export function setupEventListeners(
 
 // API request helper with error handling
 async function apiRequest(url: string, method: string, data: any) {
-  const response = await fetch(url, {
+  // Prepend API_BASE_URL to the URL if it's not an absolute URL
+  const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+  
+  const response = await fetch(fullUrl, {
     method,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: method !== 'GET' ? JSON.stringify(data) : undefined,
   });
   
   if (!response.ok) {
