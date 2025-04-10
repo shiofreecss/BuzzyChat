@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { useWebSocket } from "@/contexts/WebSocketContext";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ChatMessageProps {
   message: Message;
@@ -61,37 +62,52 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
     });
   };
 
+  // Check if message is long or contains long words
+  const isLongMessage = message.content.length > 100 || 
+    message.content.split(' ').some(word => word.length > 30);
+
   if (!message) return null;
 
   return (
-    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4 group`}>
-      <Card className={`max-w-[80%] p-3 relative ${
+    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-3 md:mb-4 group`}>
+      <Card className={`max-w-[90%] md:max-w-[85%] p-2 md:p-3 relative ${
         isOwn 
           ? 'bg-[#f4b43e]/10 border-[#f4b43e]/30 shadow-lg shadow-[#f4b43e]/10' 
           : 'bg-[#f4b43e]/5 border-[#f4b43e]/20'
       }`}>
-        <div className="text-sm font-mono mb-1 text-[#f4b43e] text-glow">
+        <div className="text-xs md:text-sm font-mono mb-1 text-[#f4b43e] text-glow">
           {shortenAddress(message.fromAddress)}
         </div>
-        <div className="break-words text-[#f4b43e] text-glow">{message.content}</div>
+        
+        {isLongMessage ? (
+          <ScrollArea className="max-h-40 md:max-h-60 max-w-full pr-2 md:pr-4">
+            <div className="text-sm md:text-base text-[#f4b43e] text-glow whitespace-pre-wrap break-words">
+              {message.content}
+            </div>
+          </ScrollArea>
+        ) : (
+          <div className="text-sm md:text-base text-[#f4b43e] text-glow whitespace-pre-wrap break-words">
+            {message.content}
+          </div>
+        )}
 
         {/* Timestamp and Read Status */}
-        <div className="text-xs mt-2 text-[#f4b43e]/70 flex items-center gap-1 font-mono">
+        <div className="text-[10px] md:text-xs mt-1 md:mt-2 text-[#f4b43e]/70 flex items-center gap-1 font-mono">
           {format(new Date(message.timestamp), 'HH:mm')}
           {isOwn && (
             <span className="ml-1">
-              <CheckCheck className="h-3 w-3 inline" />
+              <CheckCheck className="h-2 w-2 md:h-3 md:w-3 inline" />
             </span>
           )}
         </div>
 
         {/* Reactions */}
         {reactionCounts.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
+          <div className="flex flex-wrap gap-1 mt-1 md:mt-2">
             {reactionCounts.map((reaction, index) => (
               <span 
                 key={index} 
-                className="bg-[#f4b43e]/5 border border-[#f4b43e]/20 rounded px-1.5 py-0.5 text-sm text-[#f4b43e]"
+                className="bg-[#f4b43e]/5 border border-[#f4b43e]/20 rounded px-1 md:px-1.5 py-0.5 text-xs md:text-sm text-[#f4b43e]"
               >
                 {reaction.emoji} {reaction.count}
               </span>
@@ -105,9 +121,9 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
             <Button 
               variant="ghost" 
               size="icon"
-              className="opacity-0 group-hover:opacity-100 absolute -right-8 top-2 h-6 w-6 p-1 text-[#f4b43e] hover:text-[#f4b43e] hover:bg-[#f4b43e]/10 transition-all"
+              className="opacity-0 group-hover:opacity-100 absolute -right-6 md:-right-8 top-1 md:top-2 h-5 w-5 md:h-6 md:w-6 p-1 text-[#f4b43e] hover:text-[#f4b43e] hover:bg-[#f4b43e]/10 transition-all"
             >
-              <PlusCircle className="h-4 w-4" />
+              <PlusCircle className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="p-0 border-none shadow-lg shadow-[#f4b43e]/20">
@@ -115,7 +131,7 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
               data={data} 
               onEmojiSelect={handleEmojiSelect}
               theme="dark"
-              emojiSize={20}
+              emojiSize={18}
               emojiButtonSize={28}
               maxFrequentRows={1}
             />
