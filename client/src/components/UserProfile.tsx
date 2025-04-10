@@ -7,10 +7,9 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { User, UpdateUser, Nation } from "@shared/schema";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Globe } from "lucide-react";
+import { ArrowLeft, Flag } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getNations, getUserNation } from "@/pusher-client";
-import { TbWorld } from "react-icons/tb";
+import { getNations } from "@/pusher-client";
 
 interface UserProfileProps {
   address: string;
@@ -38,19 +37,6 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
       } catch (error) {
         console.error('Error fetching nations:', error);
         return [];
-      }
-    }
-  });
-
-  // Get user's detected nation based on IP
-  const { data: userNation } = useQuery({
-    queryKey: ['/api/user/nation'],
-    queryFn: async () => {
-      try {
-        return await getUserNation();
-      } catch (error) {
-        console.error('Error fetching user nation:', error);
-        return null;
       }
     }
   });
@@ -128,7 +114,7 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
   };
 
   const handleNationChange = (value: string) => {
-    setPreferredNation(value === "" ? null : value);
+    setPreferredNation(value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -138,13 +124,23 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
     if (username && !validateUsername(username)) return;
     if (nickname && !validateNickname(nickname)) return;
 
+    if (!preferredNation) {
+      toast({
+        variant: "destructive",
+        title: "Nation Required",
+        description: "Please select a nation",
+        duration: 3000,
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       const updateData: UpdateUser = {
         username: username || null,
         nickname: nickname || null,
         preferredNation: preferredNation,
-        nation: null, // We're not updating the auto-detected nation directly
+        nation: preferredNation, // Use the same value for both fields
       };
 
       await apiRequest("PATCH", `/api/users/${address}`, updateData);
@@ -254,33 +250,28 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
               )}
             </div>
             <div className="space-y-2">
-              <Label className="font-mono text-xs text-[#f4b43e] uppercase">Preferred Nation</Label>
+              <Label className="font-mono text-xs text-[#f4b43e] uppercase">
+                Nation <span className="text-red-500">*</span>
+              </Label>
               <Select
-                value={preferredNation || ""}
+                value={preferredNation || undefined}
                 onValueChange={handleNationChange}
+                required
               >
                 <SelectTrigger className="retro-input">
-                  <SelectValue placeholder="Select your preferred nation" />
+                  <SelectValue placeholder="Select your nation" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">
-                    <div className="flex items-center gap-2">
-                      <TbWorld className="h-4 w-4" />
-                      <span>Auto-detect from IP</span>
-                    </div>
-                  </SelectItem>
                   {nations.map((nation: Nation) => (
                     <SelectItem key={nation.code} value={nation.code}>
-                      {nation.displayName}
+                      <div className="flex items-center gap-2">
+                        <Flag className="h-4 w-4" />
+                        <span>{nation.displayName}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {!preferredNation && userNation?.nation && (
-                <p className="text-xs text-[#f4b43e]/70 mt-1">
-                  Auto-detected: {userNation.country} ({userNation.countryCode})
-                </p>
-              )}
             </div>
             <div className="flex gap-2">
               <Button type="submit" disabled={isSubmitting} className="retro-button text-xs">
@@ -312,22 +303,12 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
               </p>
             </div>
             <div>
-              <Label className="font-mono text-xs text-[#f4b43e] uppercase">Preferred Nation</Label>
-              <div className="flex items-center mt-1">
-                {user?.preferredNation ? (
-                  <p className="font-mono text-[#f4b43e]/80 text-sm">
-                    {getNationDisplayName(user.preferredNation)}
-                  </p>
-                ) : (
-                  <>
-                    <p className="font-mono text-[#f4b43e]/80 text-sm mr-2">Auto-detect from IP</p>
-                    {userNation?.nation && (
-                      <span className="text-xs text-[#f4b43e]/60">
-                        ({userNation.country})
-                      </span>
-                    )}
-                  </>
-                )}
+              <Label className="font-mono text-xs text-[#f4b43e] uppercase">Nation</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Flag className="h-4 w-4 text-[#f4b43e]/80" />
+                <p className="font-mono text-[#f4b43e]/80 text-sm">
+                  {user?.preferredNation ? getNationDisplayName(user.preferredNation) : "Not set"}
+                </p>
               </div>
             </div>
             <div>
