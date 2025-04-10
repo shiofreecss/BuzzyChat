@@ -70,7 +70,7 @@ export default function ChatMessage({ message, isOwn }: ChatMessageProps) {
 
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-3 md:mb-4 group`}>
-      <Card className={`max-w-[90%] md:max-w-[85%] p-2 md:p-3 relative ${
+      <Card className={`max-w-[90%] md:max-w-[85%] p-2 md:p-3 relative rounded-2xl ${
         isOwn 
           ? 'bg-[#f4b43e]/10 border-[#f4b43e]/30 shadow-lg shadow-[#f4b43e]/10' 
           : 'bg-[#f4b43e]/5 border-[#f4b43e]/20'

@@ -10,7 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 import { TbWorld, TbPlanet, TbMars } from "react-icons/tb";
 import { GiRingedPlanet } from "react-icons/gi";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Smile } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
 
 interface NationChatProps {
   nationCode?: string;
@@ -195,6 +198,11 @@ export default function NationChat({
     }
   };
   
+  // Handle emoji select
+  const handleEmojiSelect = (emoji: any) => {
+    setMessage(prev => prev + emoji.native);
+  };
+  
   const activeChatCode = isGlobalChat ? 'GLOBAL' : nationCode;
   const chatTitle = isGlobalChat 
     ? "Global Chat" 
@@ -203,7 +211,7 @@ export default function NationChat({
       : "Planet Chat";
   
   return (
-    <div className={`flex flex-col h-full relative ${getPlanetBackground(activeChatCode)}`}>
+    <div className={`flex flex-col h-full relative ${getPlanetBackground(activeChatCode)} border border-[#f4b43e] rounded-lg overflow-hidden`}>
       <div className="sticky top-0 z-10 p-3 md:p-4 border-b border-[#f4b43e]/30 backdrop-blur-sm bg-black/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -256,16 +264,40 @@ export default function NationChat({
         onSubmit={handleSendMessage} 
         className="sticky bottom-0 z-10 border-t p-2 md:p-3 flex items-center gap-2 border-[#f4b43e]/30 backdrop-blur-sm bg-black/20"
       >
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="text-[#f4b43e] hover:bg-[#f4b43e]/10 h-9 w-9"
+            >
+              <Smile className="h-5 w-5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="p-0 border-none shadow-lg shadow-[#f4b43e]/20">
+            <Picker
+              data={data}
+              onEmojiSelect={handleEmojiSelect}
+              theme="dark"
+              emojiSize={18}
+              emojiButtonSize={28}
+              maxFrequentRows={1}
+            />
+          </PopoverContent>
+        </Popover>
+        
         <Input
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Type your message..."
-          className="flex-grow bg-black/50 border-[#f4b43e]/30 text-[#f4b43e] font-mono text-sm placeholder:text-[#f4b43e]/40"
+          className="flex-grow rounded-full bg-black/50 border-[#f4b43e]/30 text-[#f4b43e] font-mono text-sm placeholder:text-[#f4b43e]/40"
         />
+        
         <Button 
           type="submit" 
-          size="sm" 
-          className="bg-[#f4b43e] hover:bg-[#f4b43e]/80 text-black"
+          size="icon"
+          className="bg-[#f4b43e] hover:bg-[#f4b43e]/80 text-black rounded-full h-9 w-9"
         >
           <IoSend className="h-4 w-4" />
         </Button>
