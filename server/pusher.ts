@@ -33,6 +33,15 @@ export const triggerPublicMessage = (message: any) => {
   return pusher.trigger('public-chat', 'new-message', message);
 };
 
+export const triggerGlobalMessage = (message: any) => {
+  return pusher.trigger('global-chat', 'new-message', message);
+};
+
+export const triggerNationMessage = (nationCode: string, message: any) => {
+  const channelName = `nation-chat-${nationCode}`;
+  return pusher.trigger(channelName, 'new-message', message);
+};
+
 export const triggerTypingStatus = (fromAddress: string, toAddress: string, isTyping: boolean) => {
   const channelName = `private-chat-${[fromAddress, toAddress].sort().join('-')}`;
   return pusher.trigger(channelName, 'typing', { fromAddress, isTyping });

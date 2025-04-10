@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, boolean, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -10,6 +10,17 @@ export const users = pgTable("users", {
   nickname: text("nickname"),
   isOnline: boolean("is_online").default(false),
   lastSeen: timestamp("last_seen").defaultNow(),
+  nation: text("nation"),
+  preferredNation: text("preferred_nation"),
+});
+
+// Nations table to keep track of available chat rooms
+export const nations = pgTable("nations", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  code: text("code").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  active: boolean("active").default(true),
 });
 
 export const messages = pgTable("messages", {
@@ -19,6 +30,8 @@ export const messages = pgTable("messages", {
   toAddress: text("to_address"),
   timestamp: timestamp("timestamp").notNull().defaultNow(),
   read: boolean("read").default(false),
+  nationId: integer("nation_id"),
+  isGlobal: boolean("is_global").default(false),
 });
 
 export const friends = pgTable("friends", {
@@ -72,24 +85,34 @@ export const insertUserSchema = createInsertSchema(users).pick({
   address: true,
   username: true,
   nickname: true,
+  nation: true,
+  preferredNation: true,
 }).extend({
   username: usernameSchema,
   nickname: nicknameSchema,
   address: walletAddressSchema,
+  nation: z.string().nullable(),
+  preferredNation: z.string().nullable(),
 });
 
 export const updateUserSchema = createInsertSchema(users).pick({
   username: true,
   nickname: true,
+  nation: true,
+  preferredNation: true,
 }).extend({
   username: usernameSchema,
   nickname: nicknameSchema,
+  nation: z.string().nullable(),
+  preferredNation: z.string().nullable(),
 });
 
 export const insertMessageSchema = createInsertSchema(messages).pick({
   content: true,
   fromAddress: true,
   toAddress: true,
+  nationId: true,
+  isGlobal: true,
 });
 
 export const insertFriendRequestSchema = createInsertSchema(friends).pick({
@@ -105,6 +128,13 @@ export const insertReactionSchema = createInsertSchema(reactions).pick({
   emoji: true,
 });
 
+export const insertNationSchema = createInsertSchema(nations).pick({
+  name: true,
+  code: true,
+  displayName: true,
+  active: true,
+});
+
 // Export types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpdateUser = z.infer<typeof updateUserSchema>;
@@ -115,3 +145,5 @@ export type Friend = typeof friends.$inferSelect;
 export type InsertFriendRequest = z.infer<typeof insertFriendRequestSchema>;
 export type Reaction = typeof reactions.$inferSelect;
 export type InsertReaction = z.infer<typeof insertReactionSchema>;
+export type Nation = typeof nations.$inferSelect;
+export type InsertNation = z.infer<typeof insertNationSchema>;

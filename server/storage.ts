@@ -1,8 +1,9 @@
 import { users, messages, friends, type User, type InsertUser, type Message, type InsertMessage, type UpdateUser, type Friend, type InsertFriendRequest } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, lt, not } from "drizzle-orm";
+import { eq, and, or, lt, not, isNull } from "drizzle-orm";
 import { subDays } from "date-fns";
 import { reactions, type Reaction, type InsertReaction } from "@shared/schema";
+import { nations, type Nation, type InsertNation } from "@shared/schema";
 
 // Rename the interface to match the implementation
 interface StorageInterface {
@@ -11,9 +12,12 @@ interface StorageInterface {
   createUser(user: InsertUser): Promise<User>;
   updateUser(address: string, update: UpdateUser): Promise<User>;
   updateOnlineStatus(address: string, isOnline: boolean): Promise<void>;
+  updateUserNation(address: string, nationCode: string): Promise<User>;
   getAllUsers(): Promise<User[]>;
   addMessage(message: InsertMessage): Promise<Message>;
   getMessages(): Promise<Message[]>;
+  getGlobalMessages(): Promise<Message[]>;
+  getNationMessages(nationId: number): Promise<Message[]>;
   clearMessages(): Promise<void>;
   cleanupOldMessages(): Promise<void>;
   sendFriendRequest(request: InsertFriendRequest): Promise<Friend>;
@@ -25,6 +29,11 @@ interface StorageInterface {
   getReactions(messageId: number): Promise<Reaction[]>;
   getReactionById(id: number): Promise<Reaction | undefined>;
   removeReaction(id: number): Promise<void>;
+  createNation(nation: InsertNation): Promise<Nation>;
+  getNation(id: number): Promise<Nation | undefined>;
+  getNationByCode(code: string): Promise<Nation | undefined>;
+  getAllNations(): Promise<Nation[]>;
+  getActiveNations(): Promise<Nation[]>;
 }
 
 export class DatabaseStorage implements StorageInterface {
@@ -312,6 +321,85 @@ export class DatabaseStorage implements StorageInterface {
       .delete(reactions)
       .where(eq(reactions.id, reactionId));
   }
+
+  async updateUserNation(address: string, nationCode: string): Promise<User> {
+    try {
+      const nation = await this.getNationByCode(nationCode);
+      if (!nation) {
+        throw new Error(`Nation with code ${nationCode} not found`);
+      }
+      
+      const [user] = await db
+        .update(users)
+        .set({
+          preferredNation: nationCode
+        })
+        .where(eq(users.address, address))
+        .returning();
+      
+      if (!user) {
+        throw new Error(`User with address ${address} not found`);
+      }
+      
+      return user;
+    } catch (error) {
+      console.error(`Failed to update nation for ${address}:`, error);
+      throw error;
+    }
+  }
+
+  async getGlobalMessages(): Promise<Message[]> {
+    return await db
+      .select()
+      .from(messages)
+      .where(eq(messages.isGlobal, true))
+      .orderBy(messages.timestamp);
+  }
+
+  async getNationMessages(nationId: number): Promise<Message[]> {
+    return await db
+      .select()
+      .from(messages)
+      .where(eq(messages.nationId, nationId))
+      .orderBy(messages.timestamp);
+  }
+
+  async createNation(insertNation: InsertNation): Promise<Nation> {
+    const [nation] = await db
+      .insert(nations)
+      .values(insertNation)
+      .returning();
+    return nation;
+  }
+
+  async getNation(id: number): Promise<Nation | undefined> {
+    const [nation] = await db
+      .select()
+      .from(nations)
+      .where(eq(nations.id, id));
+    return nation;
+  }
+
+  async getNationByCode(code: string): Promise<Nation | undefined> {
+    const [nation] = await db
+      .select()
+      .from(nations)
+      .where(eq(nations.code, code));
+    return nation;
+  }
+
+  async getAllNations(): Promise<Nation[]> {
+    return await db
+      .select()
+      .from(nations);
+  }
+
+  async getActiveNations(): Promise<Nation[]> {
+    return await db
+      .select()
+      .from(nations)
+      .where(eq(nations.active, true));
+  }
 }
 
 export const storage = new DatabaseStorage();
@@ -465,6 +553,46 @@ class MockStorage implements StorageInterface {
     if (index !== -1) {
       this.reactions.splice(index, 1);
     }
+  }
+
+  async updateUserNation(address: string, nationCode: string): Promise<User> {
+    // Implementation needed for mock storage
+    throw new Error("Method not implemented in mock storage");
+  }
+
+  async getGlobalMessages(): Promise<Message[]> {
+    // Implementation needed for mock storage
+    throw new Error("Method not implemented in mock storage");
+  }
+
+  async getNationMessages(nationId: number): Promise<Message[]> {
+    // Implementation needed for mock storage
+    throw new Error("Method not implemented in mock storage");
+  }
+
+  async createNation(nation: InsertNation): Promise<Nation> {
+    // Implementation needed for mock storage
+    throw new Error("Method not implemented in mock storage");
+  }
+
+  async getNation(id: number): Promise<Nation | undefined> {
+    // Implementation needed for mock storage
+    throw new Error("Method not implemented in mock storage");
+  }
+
+  async getNationByCode(code: string): Promise<Nation | undefined> {
+    // Implementation needed for mock storage
+    throw new Error("Method not implemented in mock storage");
+  }
+
+  async getAllNations(): Promise<Nation[]> {
+    // Implementation needed for mock storage
+    throw new Error("Method not implemented in mock storage");
+  }
+
+  async getActiveNations(): Promise<Nation[]> {
+    // Implementation needed for mock storage
+    throw new Error("Method not implemented in mock storage");
   }
 }
 

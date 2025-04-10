@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { User, UpdateUser } from "@shared/schema";
+import { User, UpdateUser, Nation } from "@shared/schema";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Globe } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getNations, getUserNation } from "@/pusher-client";
+import { TbWorld } from "react-icons/tb";
 
 interface UserProfileProps {
   address: string;
@@ -20,9 +23,37 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [username, setUsername] = useState("");
   const [nickname, setNickname] = useState("");
+  const [preferredNation, setPreferredNation] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [nicknameError, setNicknameError] = useState<string | null>(null);
+
+  // Fetch nations for the dropdown
+  const { data: nations = [] } = useQuery<Nation[]>({
+    queryKey: ['/api/nations'],
+    queryFn: async () => {
+      try {
+        const response = await getNations();
+        return response as Nation[];
+      } catch (error) {
+        console.error('Error fetching nations:', error);
+        return [];
+      }
+    }
+  });
+
+  // Get user's detected nation based on IP
+  const { data: userNation } = useQuery({
+    queryKey: ['/api/user/nation'],
+    queryFn: async () => {
+      try {
+        return await getUserNation();
+      } catch (error) {
+        console.error('Error fetching user nation:', error);
+        return null;
+      }
+    }
+  });
 
   const { data: user, isLoading } = useQuery<User>({
     queryKey: ['/api/users', address],
@@ -38,6 +69,7 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
     if (user && !isEditing) {
       setUsername(user.username || "");
       setNickname(user.nickname || "");
+      setPreferredNation(user.preferredNation || null);
     }
   }, [user, isEditing]);
 
@@ -95,6 +127,10 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
     validateNickname(value);
   };
 
+  const handleNationChange = (value: string) => {
+    setPreferredNation(value === "" ? null : value);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -107,6 +143,8 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
       const updateData: UpdateUser = {
         username: username || null,
         nickname: nickname || null,
+        preferredNation: preferredNation,
+        nation: null, // We're not updating the auto-detected nation directly
       };
 
       await apiRequest("PATCH", `/api/users/${address}`, updateData);
@@ -136,8 +174,16 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
     if (user) {
       setUsername(user.username || "");
       setNickname(user.nickname || "");
+      setPreferredNation(user.preferredNation || null);
     }
     setIsEditing(true);
+  };
+
+  // Helper function to get the nation display name from code
+  const getNationDisplayName = (code: string | null) => {
+    if (!code) return "Not set";
+    const nation = nations.find((n: Nation) => n.code === code);
+    return nation ? nation.displayName : code;
   };
 
   if (isLoading) {
@@ -145,6 +191,8 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
       <Card className="w-full max-w-md mx-auto bg-black border border-[#f4b43e]">
         <CardContent className="p-6">
           <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-[#f4b43e]/10 rounded w-1/4"></div>
+            <div className="h-8 bg-[#f4b43e]/10 rounded"></div>
             <div className="h-4 bg-[#f4b43e]/10 rounded w-1/4"></div>
             <div className="h-8 bg-[#f4b43e]/10 rounded"></div>
             <div className="h-4 bg-[#f4b43e]/10 rounded w-1/4"></div>
@@ -205,6 +253,35 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
                 <p className="text-xs text-red-500 mt-1">{nicknameError}</p>
               )}
             </div>
+            <div className="space-y-2">
+              <Label className="font-mono text-xs text-[#f4b43e] uppercase">Preferred Nation</Label>
+              <Select
+                value={preferredNation || ""}
+                onValueChange={handleNationChange}
+              >
+                <SelectTrigger className="retro-input">
+                  <SelectValue placeholder="Select your preferred nation" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">
+                    <div className="flex items-center gap-2">
+                      <TbWorld className="h-4 w-4" />
+                      <span>Auto-detect from IP</span>
+                    </div>
+                  </SelectItem>
+                  {nations.map((nation: Nation) => (
+                    <SelectItem key={nation.code} value={nation.code}>
+                      {nation.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!preferredNation && userNation?.nation && (
+                <p className="text-xs text-[#f4b43e]/70 mt-1">
+                  Auto-detected: {userNation.country} ({userNation.countryCode})
+                </p>
+              )}
+            </div>
             <div className="flex gap-2">
               <Button type="submit" disabled={isSubmitting} className="retro-button text-xs">
                 {isSubmitting ? "Saving..." : "Save Changes"}
@@ -233,6 +310,25 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
               <p className="mt-1 font-mono text-[#f4b43e]/80 text-sm">
                 {user?.nickname || "Not set"}
               </p>
+            </div>
+            <div>
+              <Label className="font-mono text-xs text-[#f4b43e] uppercase">Preferred Nation</Label>
+              <div className="flex items-center mt-1">
+                {user?.preferredNation ? (
+                  <p className="font-mono text-[#f4b43e]/80 text-sm">
+                    {getNationDisplayName(user.preferredNation)}
+                  </p>
+                ) : (
+                  <>
+                    <p className="font-mono text-[#f4b43e]/80 text-sm mr-2">Auto-detect from IP</p>
+                    {userNation?.nation && (
+                      <span className="text-xs text-[#f4b43e]/60">
+                        ({userNation.country})
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
             <div>
               <Label className="font-mono text-xs text-[#f4b43e] uppercase">Wallet Address</Label>

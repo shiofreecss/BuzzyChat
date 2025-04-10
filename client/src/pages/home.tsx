@@ -5,6 +5,7 @@ import WalletConnect from "@/components/WalletConnect";
 import ChatInterface from "@/components/ChatInterface";
 import UserProfile from "@/components/UserProfile";
 import ChatList from "@/components/ChatList";
+import NationChat from "@/components/NationChat";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
@@ -40,6 +41,8 @@ export default function Home() {
   const [address, setAddress] = useState<string>();
   const [showProfile, setShowProfile] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType>();
+  const [selectedNation, setSelectedNation] = useState<string>();
+  const [isGlobalChat, setIsGlobalChat] = useState(false);
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   const [isMobile, setIsMobile] = useState(false);
@@ -107,6 +110,8 @@ export default function Home() {
       setAddress(undefined);
       setShowProfile(false);
       setSelectedUser(undefined);
+      setSelectedNation(undefined);
+      setIsGlobalChat(false);
       setLocation('/');
       toast({
         title: "Logged Out",
@@ -123,6 +128,8 @@ export default function Home() {
 
   const handleSelectUser = (user: UserType | null) => {
     setSelectedUser(user || undefined);
+    setSelectedNation(undefined);
+    setIsGlobalChat(false);
     if (isMobile) {
       setPage([1, 1]); // Animate forward
       setLocation('/chat');
@@ -131,6 +138,8 @@ export default function Home() {
 
   const handleBackToList = () => {
     setSelectedUser(undefined);
+    setSelectedNation(undefined);
+    setIsGlobalChat(false);
     if (isMobile) {
       setPage([0, -1]); // Animate backward
       setLocation('/');
@@ -139,8 +148,30 @@ export default function Home() {
 
   const handlePublicChat = () => {
     setSelectedUser(undefined);
+    setSelectedNation(undefined);
+    setIsGlobalChat(false);
     if (isMobile) {
       setPage([1, 1]); // Animate forward to show chat interface
+      setLocation('/chat');
+    }
+  };
+
+  const handleNationChat = (nationCode: string) => {
+    setSelectedUser(undefined);
+    setSelectedNation(nationCode);
+    setIsGlobalChat(false);
+    if (isMobile) {
+      setPage([1, 1]); // Animate forward
+      setLocation('/chat');
+    }
+  };
+
+  const handleGlobalChat = () => {
+    setSelectedUser(undefined);
+    setSelectedNation(undefined);
+    setIsGlobalChat(true);
+    if (isMobile) {
+      setPage([1, 1]); // Animate forward
       setLocation('/chat');
     }
   };
@@ -152,6 +183,46 @@ export default function Home() {
 
   const showChatInterface = !isMobile || (isMobile && location === '/chat');
   const showChatList = !isMobile || (isMobile && location === '/');
+
+  // Determine which chat component to display
+  const renderChatComponent = () => {
+    if (selectedUser) {
+      return (
+        <ChatInterface 
+          address={address}
+          selectedUser={selectedUser}
+          onSelectUser={handleBackToList}
+          showBackButton={isMobile}
+          isPublicChat={false}
+        />
+      );
+    } else if (selectedNation) {
+      return (
+        <NationChat
+          nationCode={selectedNation}
+          currentUserAddress={address}
+          isGlobalChat={false}
+        />
+      );
+    } else if (isGlobalChat) {
+      return (
+        <NationChat
+          currentUserAddress={address}
+          isGlobalChat={true}
+        />
+      );
+    } else {
+      return (
+        <ChatInterface 
+          address={address}
+          selectedUser={undefined}
+          onSelectUser={handleBackToList}
+          showBackButton={isMobile}
+          isPublicChat={true}
+        />
+      );
+    }
+  };
 
   return (
     <>
@@ -208,7 +279,11 @@ export default function Home() {
                           currentAddress={address} 
                           onSelectUser={handleSelectUser}
                           onPublicChat={handlePublicChat}
+                          onNationChat={handleNationChat}
+                          onGlobalChat={handleGlobalChat}
                           selectedUser={selectedUser}
+                          selectedNation={selectedNation}
+                          isGlobalChat={isGlobalChat}
                         />
                       </motion.div>
                     )}
@@ -223,13 +298,7 @@ export default function Home() {
                         transition={pageTransition}
                         className="flex-1 h-full"
                       >
-                        <ChatInterface 
-                          address={address}
-                          selectedUser={selectedUser}
-                          onSelectUser={handleBackToList}
-                          showBackButton={isMobile}
-                          isPublicChat={selectedUser === undefined}
-                        />
+                        {renderChatComponent()}
                       </motion.div>
                     )}
                   </AnimatePresence>

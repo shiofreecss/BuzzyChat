@@ -15,7 +15,9 @@ import {
   triggerPublicMessage,
   triggerReaction,
   triggerTypingStatus,
-  triggerUserStatus
+  triggerUserStatus,
+  triggerNationMessage,
+  triggerGlobalMessage
 } from './pusher';
 
 // Define the type for db to avoid 'any' type errors
@@ -159,12 +161,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send via Pusher if configured
       if (isPusherConfigured) {
         if (messageData.toAddress) {
+          // Private message
           await triggerPrivateMessage(
             messageData.fromAddress,
             messageData.toAddress,
             savedMessage
           );
+        } else if (messageData.nationId) {
+          // Nation-specific message
+          const nation = await storage.getNation(messageData.nationId);
+          if (nation) {
+            await triggerNationMessage(nation.code, savedMessage);
+          } else {
+            console.error(`Nation with ID ${messageData.nationId} not found`);
+          }
+        } else if (messageData.isGlobal) {
+          // Global message
+          await triggerGlobalMessage(savedMessage);
         } else {
+          // Default public message
           await triggerPublicMessage(savedMessage);
         }
       }
@@ -384,10 +399,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/messages', async (_req, res) => {
+  app.get('/api/messages', async (req, res) => {
     try {
-      const messages = await storage.getMessages();
-      res.json(messages);
+      const { nationId, isGlobal } = req.query;
+      
+      if (nationId) {
+        const nationMessages = await storage.getNationMessages(parseInt(nationId as string));
+        return res.json(nationMessages);
+      } else if (isGlobal === 'true') {
+        const globalMessages = await storage.getGlobalMessages();
+        return res.json(globalMessages);
+      } else {
+        const messages = await storage.getMessages();
+        return res.json(messages);
+      }
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch messages" });
     }
@@ -565,6 +590,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Failed to clean up old messages:", error);
     }
   }, 24 * 60 * 60 * 1000); // Run daily
+
+  // Nation APIs
+  app.get('/api/nations', async (_req, res) => {
+    try {
+      const nations = await storage.getActiveNations();
+      res.json(nations);
+    } catch (error) {
+      console.error('Error fetching nations:', error);
+      res.status(500).json({ error: "Failed to fetch nations" });
+    }
+  });
+
+  app.post('/api/nations', async (req, res) => {
+    try {
+      const nationData = req.body;
+      const nation = await storage.createNation(nationData);
+      res.json(nation);
+    } catch (error) {
+      console.error('Error creating nation:', error);
+      res.status(400).json({ error: "Failed to create nation" });
+    }
+  });
+
+  app.get('/api/nations/:code', async (req, res) => {
+    try {
+      const { code } = req.params;
+      const nation = await storage.getNationByCode(code);
+      
+      if (!nation) {
+        return res.status(404).json({ error: "Nation not found" });
+      }
+      
+      res.json(nation);
+    } catch (error) {
+      console.error('Error fetching nation:', error);
+      res.status(500).json({ error: "Failed to fetch nation" });
+    }
+  });
+
+  // User nation APIs
+  app.post('/api/users/:address/nation', async (req, res) => {
+    try {
+      const { address } = req.params;
+      const { nationCode } = req.body;
+      
+      if (!nationCode || typeof nationCode !== 'string') {
+        return res.status(400).json({ error: "Invalid nation code" });
+      }
+      
+      const user = await storage.updateUserNation(address, nationCode);
+      res.json(user);
+    } catch (error) {
+      console.error('Error updating user nation:', error);
+      res.status(400).json({ 
+        error: "Failed to update user nation",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Get user nation based on IP
+  app.get('/api/user/nation', async (req, res) => {
+    try {
+      // Get client IP
+      const forwardedFor = req.headers['x-forwarded-for'];
+      const ip = typeof forwardedFor === 'string' 
+        ? forwardedFor.split(',')[0].trim() 
+        : req.socket.remoteAddress;
+      
+      if (!ip) {
+        return res.status(400).json({ error: "Could not determine client IP" });
+      }
+      
+      try {
+        // Call IP geolocation service
+        const geoResponse = await fetch(`https://ipapi.co/${ip}/json/`);
+        const geoData = await geoResponse.json();
+        
+        if (geoData.error) {
+          console.error('IP geolocation error:', geoData.error);
+          return res.json({ 
+            country: 'UNKNOWN',
+            countryCode: 'XX',
+            ip
+          });
+        }
+        
+        // Try to find matching nation in our database
+        let nation = null;
+        if (geoData.country_code) {
+          nation = await storage.getNationByCode(geoData.country_code);
+        }
+        
+        res.json({
+          country: geoData.country_name || 'UNKNOWN',
+          countryCode: geoData.country_code || 'XX',
+          ip,
+          nation
+        });
+      } catch (error) {
+        console.error('IP geolocation service error:', error);
+        return res.json({ 
+          country: 'UNKNOWN',
+          countryCode: 'XX',
+          ip
+        });
+      }
+    } catch (error) {
+      console.error('Error getting user nation:', error);
+      res.status(500).json({ error: "Failed to get user nation" });
+    }
+  });
 
   return httpServer;
 }

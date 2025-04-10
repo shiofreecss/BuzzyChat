@@ -8,6 +8,8 @@ type Channels = {
   privateChannel?: Channel;
   statusChannel: Channel;
   reactionsChannel: Channel;
+  nationChannel?: Channel;
+  globalChannel: Channel;
 };
 
 // Types for message handlers
@@ -59,20 +61,44 @@ function getPrivateChannelName(address1: string, address2: string | null): strin
   return `private-chat-${addresses.join('-')}`;
 }
 
+// Get nation channel name
+function getNationChannelName(nationCode: string): string {
+  return `nation-chat-${nationCode}`;
+}
+
 // Subscribe to necessary channels
-export function subscribeToChannels(pusher: Pusher | null, userAddress: string): Channels | null {
+export function subscribeToChannels(
+  pusher: Pusher | null, 
+  userAddress: string, 
+  nationCode?: string
+): Channels | null {
   if (!pusher) return null;
   
   try {
     const publicChannel = pusher.subscribe('public-chat');
     const statusChannel = pusher.subscribe('user-status');
     const reactionsChannel = pusher.subscribe('reactions');
+    const globalChannel = pusher.subscribe('global-chat');
     
     // Private channel for direct messages
     const privateChannelName = `private-chat-${userAddress}`;
     const privateChannel = userAddress ? pusher.subscribe(privateChannelName) : undefined;
     
-    return { publicChannel, privateChannel, statusChannel, reactionsChannel };
+    // Nation-specific channel
+    let nationChannel;
+    if (nationCode) {
+      const nationChannelName = getNationChannelName(nationCode);
+      nationChannel = pusher.subscribe(nationChannelName);
+    }
+    
+    return { 
+      publicChannel, 
+      privateChannel, 
+      statusChannel, 
+      reactionsChannel, 
+      nationChannel, 
+      globalChannel 
+    };
   } catch (error) {
     console.error('Error subscribing to channels:', error);
     return null;
@@ -90,10 +116,15 @@ export function setupEventListeners(
   if (!channels) return;
   
   channels.publicChannel.bind('new-message', messageHandler);
+  channels.globalChannel.bind('new-message', messageHandler);
   
   if (channels.privateChannel) {
     channels.privateChannel.bind('new-message', messageHandler);
     channels.privateChannel.bind('typing', typingHandler);
+  }
+  
+  if (channels.nationChannel) {
+    channels.nationChannel.bind('new-message', messageHandler);
   }
   
   channels.statusChannel.bind('status-change', statusHandler);
@@ -116,11 +147,50 @@ async function apiRequest(url: string, method: string, data: any) {
 }
 
 // Send message through HTTP API
-export async function sendMessage(content: string, fromAddress: string, toAddress: string | null = null) {
+export async function sendMessage(
+  content: string, 
+  fromAddress: string, 
+  toAddress: string | null = null,
+  nationId: number | null = null,
+  isGlobal: boolean = false
+) {
   try {
-    return apiRequest('/api/messages', 'POST', { content, fromAddress, toAddress });
+    return apiRequest('/api/messages', 'POST', { 
+      content, 
+      fromAddress, 
+      toAddress,
+      nationId,
+      isGlobal
+    });
   } catch (error) {
     console.error('Error sending message:', error);
+    throw error;
+  }
+}
+
+// Send message to nation-specific chat
+export async function sendNationMessage(
+  content: string,
+  fromAddress: string,
+  nationId: number
+) {
+  try {
+    return sendMessage(content, fromAddress, null, nationId, false);
+  } catch (error) {
+    console.error('Error sending nation message:', error);
+    throw error;
+  }
+}
+
+// Send message to global chat
+export async function sendGlobalMessage(
+  content: string,
+  fromAddress: string
+) {
+  try {
+    return sendMessage(content, fromAddress, null, null, true);
+  } catch (error) {
+    console.error('Error sending global message:', error);
     throw error;
   }
 }
@@ -155,16 +225,54 @@ export async function updateOnlineStatus(address: string, isOnline: boolean) {
   }
 }
 
+// Get user nation based on IP
+export async function getUserNation() {
+  try {
+    return apiRequest('/api/user/nation', 'GET', {});
+  } catch (error) {
+    console.error('Error getting user nation:', error);
+    throw error;
+  }
+}
+
+// Update user nation preference
+export async function updateUserNation(address: string, nationCode: string) {
+  try {
+    return apiRequest(`/api/users/${address}/nation`, 'POST', { nationCode });
+  } catch (error) {
+    console.error('Error updating user nation:', error);
+    throw error;
+  }
+}
+
+// Get all available nations
+export async function getNations() {
+  try {
+    return apiRequest('/api/nations', 'GET', {});
+  } catch (error) {
+    console.error('Error getting nations:', error);
+    throw error;
+  }
+}
+
 // Cleanup function to unsubscribe from all channels
 export function cleanup(pusher: Pusher | null, channels: Channels | null) {
   if (!pusher || !channels) return;
   
   try {
     pusher.unsubscribe('public-chat');
+    pusher.unsubscribe('global-chat');
+    
     if (channels.privateChannel) {
       const channelName = channels.privateChannel.name;
       pusher.unsubscribe(channelName);
     }
+    
+    if (channels.nationChannel) {
+      const channelName = channels.nationChannel.name;
+      pusher.unsubscribe(channelName);
+    }
+    
     pusher.unsubscribe('user-status');
     pusher.unsubscribe('reactions');
     pusher.disconnect();
