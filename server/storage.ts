@@ -332,7 +332,8 @@ export class DatabaseStorage implements StorageInterface {
       const [user] = await db
         .update(users)
         .set({
-          preferredNation: nationCode
+          preferredNation: nationCode,
+          nation: nationCode
         })
         .where(eq(users.address, address))
         .returning();

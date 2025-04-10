@@ -36,6 +36,36 @@ const defaultNations = [
     code: 'SATURN',
     displayName: 'Saturn',
     active: true
+  },
+  {
+    name: 'Venus',
+    code: 'VENUS',
+    displayName: 'Venus',
+    active: true
+  },
+  {
+    name: 'Mercury',
+    code: 'MERCURY',
+    displayName: 'Mercury',
+    active: true
+  },
+  {
+    name: 'Neptune',
+    code: 'NEPTUNE',
+    displayName: 'Neptune',
+    active: true
+  },
+  {
+    name: 'Uranus',
+    code: 'URANUS',
+    displayName: 'Uranus',
+    active: true
+  },
+  {
+    name: 'Pluto',
+    code: 'PLUTO',
+    displayName: 'Pluto (Dwarf Planet)',
+    active: true
   }
 ];
 

@@ -38,6 +38,16 @@ const getPlanetIcon = (nationCode: string) => {
       return <TbPlanet className="h-4 w-4 text-orange-400" />;
     case 'SATURN':
       return <GiRingedPlanet className="h-4 w-4 text-yellow-400" />;
+    case 'VENUS':
+      return <TbPlanet className="h-4 w-4 text-yellow-200" />;
+    case 'MERCURY':
+      return <TbPlanet className="h-4 w-4 text-gray-400" />;
+    case 'NEPTUNE':
+      return <TbPlanet className="h-4 w-4 text-blue-700" />;
+    case 'URANUS':
+      return <TbPlanet className="h-4 w-4 text-cyan-400" />;
+    case 'PLUTO':
+      return <TbPlanet className="h-4 w-4 text-purple-400" />;
     case 'GLOBAL':
       return <TbWorld className="h-4 w-4 text-green-500" />;
     default:
