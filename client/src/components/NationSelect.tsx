@@ -8,7 +8,8 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { TbWorld } from "react-icons/tb";
+import { TbWorld, TbPlanet, TbMars } from "react-icons/tb";
+import { GiRingedPlanet } from "react-icons/gi";
 import { useQuery } from '@tanstack/react-query';
 
 export interface Nation {
@@ -25,6 +26,24 @@ interface NationSelectProps {
   onSelectNation: (nationCode: string) => void;
   onGlobalChat: () => void;
 }
+
+// Helper to get the appropriate planet icon for each nation
+const getPlanetIcon = (nationCode: string) => {
+  switch (nationCode) {
+    case 'EARTH':
+      return <TbPlanet className="h-4 w-4 text-blue-500" />;
+    case 'MARS':
+      return <TbMars className="h-4 w-4 text-red-500" />;
+    case 'JUPITER':
+      return <TbPlanet className="h-4 w-4 text-orange-400" />;
+    case 'SATURN':
+      return <GiRingedPlanet className="h-4 w-4 text-yellow-400" />;
+    case 'GLOBAL':
+      return <TbWorld className="h-4 w-4 text-green-500" />;
+    default:
+      return <TbPlanet className="h-4 w-4" />;
+  }
+};
 
 export default function NationSelect({
   currentUserAddress,
@@ -59,24 +78,24 @@ export default function NationSelect({
   };
 
   if (isLoading) {
-    return <div className="text-center p-4">Loading nations...</div>;
+    return <div className="text-center p-4">Loading planets...</div>;
   }
 
   if (error) {
-    return <div className="text-center text-red-500 p-4">Error loading nations</div>;
+    return <div className="text-center text-red-500 p-4">Error loading planets</div>;
   }
 
   return (
     <div className="flex flex-col space-y-4 p-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Select Chat Room</h3>
+        <h3 className="text-lg font-semibold">Select Planet Chat</h3>
         <Button
           variant="ghost"
           size="sm"
           className="flex items-center gap-2"
           onClick={onGlobalChat}
         >
-          <TbWorld className="h-5 w-5" />
+          <TbWorld className="h-5 w-5 text-green-500" />
           <span>Global</span>
         </Button>
       </div>
@@ -86,12 +105,15 @@ export default function NationSelect({
         onValueChange={handleNationChange}
       >
         <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select your nation" />
+          <SelectValue placeholder="Select your planet" />
         </SelectTrigger>
         <SelectContent>
           {nations?.map((nation) => (
             <SelectItem key={nation.code} value={nation.code}>
-              {nation.displayName}
+              <div className="flex items-center gap-2">
+                {getPlanetIcon(nation.code)}
+                <span>{nation.displayName}</span>
+              </div>
             </SelectItem>
           ))}
         </SelectContent>

@@ -14,75 +14,27 @@ const defaultNations = [
     active: true
   },
   {
-    name: 'United States',
-    code: 'US',
-    displayName: 'United States',
+    name: 'Earth',
+    code: 'EARTH',
+    displayName: 'Earth',
     active: true
   },
   {
-    name: 'United Kingdom',
-    code: 'GB',
-    displayName: 'United Kingdom',
+    name: 'Mars',
+    code: 'MARS',
+    displayName: 'Mars',
     active: true
   },
   {
-    name: 'Canada',
-    code: 'CA',
-    displayName: 'Canada',
+    name: 'Jupiter',
+    code: 'JUPITER',
+    displayName: 'Jupiter',
     active: true
   },
   {
-    name: 'Australia',
-    code: 'AU',
-    displayName: 'Australia',
-    active: true
-  },
-  {
-    name: 'Germany',
-    code: 'DE',
-    displayName: 'Germany',
-    active: true
-  },
-  {
-    name: 'France',
-    code: 'FR',
-    displayName: 'France',
-    active: true
-  },
-  {
-    name: 'Japan',
-    code: 'JP',
-    displayName: 'Japan',
-    active: true
-  },
-  {
-    name: 'China',
-    code: 'CN',
-    displayName: 'China',
-    active: true
-  },
-  {
-    name: 'Brazil',
-    code: 'BR',
-    displayName: 'Brazil',
-    active: true
-  },
-  {
-    name: 'India',
-    code: 'IN',
-    displayName: 'India',
-    active: true
-  },
-  {
-    name: 'Singapore',
-    code: 'SG',
-    displayName: 'Singapore',
-    active: true
-  },
-  {
-    name: 'South Korea',
-    code: 'KR',
-    displayName: 'South Korea',
+    name: 'Saturn',
+    code: 'SATURN',
+    displayName: 'Saturn',
     active: true
   }
 ];
@@ -95,8 +47,9 @@ async function seedNations() {
     const existingNations = await db.select().from(nations);
     
     if (existingNations.length > 0) {
-      console.log(`Found ${existingNations.length} existing nations. Skipping seed.`);
-      return;
+      console.log(`Found ${existingNations.length} existing nations.`);
+      console.log('Deleting existing nations to insert new ones...');
+      await db.delete(nations);
     }
 
     // Insert all default nations

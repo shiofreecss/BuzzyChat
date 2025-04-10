@@ -7,14 +7,34 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { User, UpdateUser, Nation } from "@shared/schema";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Flag } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getNations } from "@/pusher-client";
+import { TbWorld, TbPlanet, TbMars } from "react-icons/tb";
+import { GiRingedPlanet } from "react-icons/gi";
 
 interface UserProfileProps {
   address: string;
   onBack: () => void;
 }
+
+// Helper to get the appropriate planet icon for each nation
+const getPlanetIcon = (nationCode: string) => {
+  switch (nationCode) {
+    case 'EARTH':
+      return <TbPlanet className="h-4 w-4 text-blue-500" />;
+    case 'MARS':
+      return <TbMars className="h-4 w-4 text-red-500" />;
+    case 'JUPITER':
+      return <TbPlanet className="h-4 w-4 text-orange-400" />;
+    case 'SATURN':
+      return <GiRingedPlanet className="h-4 w-4 text-yellow-400" />;
+    case 'GLOBAL':
+      return <TbWorld className="h-4 w-4 text-green-500" />;
+    default:
+      return <TbPlanet className="h-4 w-4" />;
+  }
+};
 
 export default function UserProfile({ address, onBack }: UserProfileProps) {
   const { toast } = useToast();
@@ -251,7 +271,7 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
             </div>
             <div className="space-y-2">
               <Label className="font-mono text-xs text-[#f4b43e] uppercase">
-                Nation <span className="text-red-500">*</span>
+                Home Planet <span className="text-red-500">*</span>
               </Label>
               <Select
                 value={preferredNation || undefined}
@@ -259,13 +279,13 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
                 required
               >
                 <SelectTrigger className="retro-input">
-                  <SelectValue placeholder="Select your nation" />
+                  <SelectValue placeholder="Select your planet" />
                 </SelectTrigger>
                 <SelectContent>
                   {nations.map((nation: Nation) => (
                     <SelectItem key={nation.code} value={nation.code}>
                       <div className="flex items-center gap-2">
-                        <Flag className="h-4 w-4" />
+                        {getPlanetIcon(nation.code)}
                         <span>{nation.displayName}</span>
                       </div>
                     </SelectItem>
@@ -303,9 +323,9 @@ export default function UserProfile({ address, onBack }: UserProfileProps) {
               </p>
             </div>
             <div>
-              <Label className="font-mono text-xs text-[#f4b43e] uppercase">Nation</Label>
+              <Label className="font-mono text-xs text-[#f4b43e] uppercase">Home Planet</Label>
               <div className="flex items-center gap-2 mt-1">
-                <Flag className="h-4 w-4 text-[#f4b43e]/80" />
+                {user?.preferredNation && getPlanetIcon(user.preferredNation)}
                 <p className="font-mono text-[#f4b43e]/80 text-sm">
                   {user?.preferredNation ? getNationDisplayName(user.preferredNation) : "Not set"}
                 </p>
